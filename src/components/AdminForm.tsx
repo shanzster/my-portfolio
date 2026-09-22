@@ -237,6 +237,31 @@ function FieldView({
     );
   }
 
+  if (field.kind === "file") {
+    const url = ((value as string) ?? "").trim();
+    return (
+      <div>
+        <label className={labelCls}>{field.label}</label>
+        <div className="flex gap-1.5">
+          <input
+            className={inputCls}
+            value={(value as string) ?? ""}
+            placeholder="Upload, or paste a PDF URL / /path"
+            onChange={(e) => onChange(e.target.value)}
+          />
+          <UploadButton accept="application/pdf" onUploaded={(u) => onChange(u)} />
+        </div>
+        {url ? (
+          <div className="mt-2 overflow-hidden rounded-[8px] border border-border">
+            <iframe src={url} title="PDF preview" className="w-full border-0 pointer-events-none" style={{ height: 140 }} />
+          </div>
+        ) : (
+          field.help && <p className={helpCls}>{field.help}</p>
+        )}
+      </div>
+    );
+  }
+
   if (field.kind === "imageList") {
     const list = Array.isArray(value) ? (value as string[]) : [];
     const update = (next: string[]) => onChange(next);
@@ -284,6 +309,59 @@ function FieldView({
             + Add image
           </button>
           <UploadButton onUploaded={(url) => update([...list, url])} />
+        </div>
+      </div>
+    );
+  }
+
+  if (field.kind === "videoList") {
+    const list = Array.isArray(value) ? (value as string[]) : [];
+    const update = (next: string[]) => onChange(next);
+    const move = (i: number, dir: -1 | 1) => {
+      const j = i + dir;
+      if (j < 0 || j >= list.length) return;
+      const next = [...list];
+      [next[i], next[j]] = [next[j], next[i]];
+      update(next);
+    };
+    return (
+      <div>
+        <label className={labelCls}>{field.label}</label>
+        {field.help && <p className={`${helpCls} mt-0 mb-1.5`}>{field.help}</p>}
+        <div className="space-y-2">
+          {list.map((item, i) => (
+            <div key={i} className="rounded-[10px] border border-border bg-secondary/30 p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <input
+                  className={inputCls}
+                  value={item}
+                  placeholder="Upload, or paste a .mp4 URL"
+                  onChange={(e) => update(list.map((x, j) => (j === i ? e.target.value : x)))}
+                />
+                <UploadButton accept="video/*" onUploaded={(url) => update(list.map((x, j) => (j === i ? url : x)))} />
+                <button type="button" className={smallBtn} onClick={() => move(i, -1)} aria-label="Move up">↑</button>
+                <button type="button" className={smallBtn} onClick={() => move(i, 1)} aria-label="Move down">↓</button>
+                <button type="button" className={smallBtn} onClick={() => update(list.filter((_, j) => j !== i))} aria-label="Remove">✕</button>
+              </div>
+              {/* Inline video preview */}
+              {item.trim() && (
+                <video
+                  src={item.trim()}
+                  className="w-full rounded-[7px] border border-border bg-black"
+                  style={{ maxHeight: 160, aspectRatio: "9/16", objectFit: "cover" }}
+                  muted
+                  playsInline
+                  controls
+                />
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="mt-1.5 flex gap-1.5">
+          <button type="button" className={smallBtn} onClick={() => update([...list, ""])}>
+            + Add reel
+          </button>
+          <UploadButton accept="video/*" onUploaded={(url) => update([...list, url])} />
         </div>
       </div>
     );

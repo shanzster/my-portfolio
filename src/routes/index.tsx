@@ -9,7 +9,7 @@ import { SkimPrompt } from "@/components/SkimPrompt";
 import { AboutScene } from "@/components/AboutScene";
 import { WorkFolderScene } from "@/components/WorkFolder";
 import { useWork, useHome } from "@/lib/content";
-import { EditableText, EditableImage } from "@/lib/edit-mode";
+import { EditableText, EditableImage, useEdit } from "@/lib/edit-mode";
 import { Reveal } from "@/hooks/useScrollReveal";
 import logoImage from "@/image_reference/logos/Shanzster_Logo.png";
 import photoshopLogo from "@/image_reference/logos/PS.png";
@@ -40,6 +40,9 @@ export const Route = createFileRoute("/")({
 
 /* ───────── macOS NOTIFICATION — slides in once per session ───────── */
 function MacNotification() {
+  const { data: home } = useHome();
+  const notif = home.notification;
+  const { editing } = useEdit();
   const [show, setShow] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
@@ -53,11 +56,19 @@ function MacNotification() {
     return () => clearTimeout(t);
   }, []);
 
+  // Keep the notification on screen while edit mode is on so it can be edited.
   useEffect(() => {
-    if (!show || leaving) return;
+    if (editing) {
+      setShow(true);
+      setLeaving(false);
+    }
+  }, [editing]);
+
+  useEffect(() => {
+    if (!show || leaving || editing) return;
     const t = setTimeout(() => setLeaving(true), 9000);
     return () => clearTimeout(t);
-  }, [show, leaving]);
+  }, [show, leaving, editing]);
 
   useEffect(() => {
     if (!leaving) return;
@@ -94,25 +105,23 @@ function MacNotification() {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
-            <p className="text-[12px] font-semibold tracking-tight text-foreground">Shanzster</p>
-            <span className="text-[10px] tracking-tight text-foreground/35 shrink-0">now</span>
+            <EditableText page="home" path={["notification", "title"]} value={notif.title} as="p" className="text-[12px] font-semibold tracking-tight text-foreground" />
+            <EditableText page="home" path={["notification", "time"]} value={notif.time} as="span" className="text-[10px] tracking-tight text-foreground/35 shrink-0" />
           </div>
-          <p className="text-[12px] leading-snug tracking-tight text-foreground/60">
-            Taking on new clients for 2026 — want your brand next?
-          </p>
+          <EditableText page="home" path={["notification", "body"]} value={notif.body} as="p" className="text-[12px] leading-snug tracking-tight text-foreground/60" />
           <div className="mt-2 flex items-center gap-3">
             <a
               href="#contact"
               onClick={() => setLeaving(true)}
               className="text-[11px] font-medium tracking-tight text-foreground hover:opacity-70 transition"
             >
-              Reply →
+              <EditableText page="home" path={["notification", "cta"]} value={notif.cta} />
             </a>
             <button
               onClick={() => setLeaving(true)}
               className="text-[11px] tracking-tight text-foreground/40 hover:text-foreground/70 transition"
             >
-              Dismiss
+              <EditableText page="home" path={["notification", "dismiss"]} value={notif.dismiss} />
             </button>
           </div>
         </div>
@@ -170,8 +179,10 @@ function Hero() {
 
           {/* Eyebrow */}
           <div className="flex flex-col items-center gap-2 mb-3 hero-drop hero-drop-1">
-            <img
-              src={logoImage}
+            <EditableImage
+              page="home"
+              path={["site", "heroLogo"]}
+              src={site.heroLogo || logoImage}
               alt="Shanzster Logo"
               className="h-6 sm:h-8 w-auto object-contain"
             />
@@ -224,13 +235,13 @@ function Hero() {
             href="#contact"
             className="cta-primary rounded-full px-5 py-2 sm:px-6 sm:py-2.5 text-[11px] sm:text-[12px] font-medium tracking-tight"
           >
-            Hire me →
+            <EditableText page="home" path={["site", "heroCtaPrimary"]} value={site.heroCtaPrimary} />
           </a>
           <a
             href="#work"
             className="rounded-full bg-foreground px-4 py-1.5 sm:px-5 sm:py-2 text-[11px] sm:text-[12px] tracking-tight text-background transition hover:opacity-85"
           >
-            See the work
+            <EditableText page="home" path={["site", "heroCtaWork"]} value={site.heroCtaWork} />
           </a>
           <a
             href="/ALARCON_SA_CV_MVA.pdf"
@@ -238,7 +249,7 @@ function Hero() {
             rel="noopener noreferrer"
             className="rounded-full border border-border bg-card px-4 py-1.5 sm:px-5 sm:py-2 text-[11px] sm:text-[12px] tracking-tight text-foreground/70 transition hover:bg-secondary hover:text-foreground"
           >
-            Download CV ↓
+            <EditableText page="home" path={["site", "heroCtaCv"]} value={site.heroCtaCv} />
           </a>
         </div>
 
@@ -248,51 +259,65 @@ function Hero() {
           style={{ flexShrink: 0 }}
         >
           {site.heroStats.map((s, i) => (
-            <Stat key={i} value={s.value} label={s.label} />
+            <Stat key={i} i={i} value={s.value} label={s.label} />
           ))}
         </div>
 
-        {/* ── Marquee ── */}
-        <div
-          className="overflow-hidden border-t border-border/30 bg-secondary/30 ticker-mask"
-          style={{ flexShrink: 0 }}
-        >
-          <div className="ticker flex gap-10 whitespace-nowrap py-2.5 text-[11px] tracking-tight text-foreground/35">
-            {[
-              "Social Media Management",
-              "Brand Identity",
-              "Content Strategy",
-              "Meta Ads",
-              "Google Ads",
-              "Fashion E-commerce",
-              "Video Editing",
-              "Canva Templates",
-              "Reels & Short-form",
-              "Community Management",
-              "Campaign Planning",
-              "Visual Storytelling",
-            ].flatMap((t, i, a) => [...a, ...a]).map((t, i) => (
-              <span key={i} className="flex items-center gap-10">
-                <span className="text-foreground/20">✦</span>
-                <span>{t}</span>
-              </span>
-            ))}
-          </div>
-        </div>
+        {/* ── Marquee — freezes to a single editable row in edit mode ── */}
+        <HeroMarquee items={site.heroTicker} />
       </div>
     </section>
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function HeroMarquee({ items }: { items: string[] }) {
+  const { editing } = useEdit();
+  return (
+    <div
+      className={`overflow-hidden border-t border-border/30 bg-secondary/30 ${editing ? "" : "ticker-mask"}`}
+      style={{ flexShrink: 0 }}
+    >
+      {editing ? (
+        <div className="flex flex-wrap gap-x-8 gap-y-2 py-2.5 px-4 text-[11px] tracking-tight text-foreground/35">
+          {items.map((t, i) => (
+            <span key={i} className="flex items-center gap-3">
+              <span className="text-foreground/20">✦</span>
+              <EditableText page="home" path={["site", "heroTicker", i]} value={t} />
+            </span>
+          ))}
+        </div>
+      ) : (
+        <div className="ticker flex gap-10 whitespace-nowrap py-2.5 text-[11px] tracking-tight text-foreground/35">
+          {items.flatMap((t, i, a) => [...a, ...a]).map((t, i) => (
+            <span key={i} className="flex items-center gap-10">
+              <span className="text-foreground/20">✦</span>
+              <span>{t}</span>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Stat({ i, value, label }: { i: number; value: string; label: string }) {
+  const { editing } = useEdit();
   return (
     <div className="px-3 py-2 sm:px-5 sm:py-4">
       <div className="text-[22px] sm:text-[28px] leading-none tracking-tightest font-bold">
-        <CountUp value={value} />
+        {editing ? (
+          <EditableText page="home" path={["site", "heroStats", i, "value"]} value={value} />
+        ) : (
+          <CountUp value={value} />
+        )}
       </div>
-      <div className="mt-1 text-[9px] sm:text-[10px] uppercase tracking-[0.12em] text-foreground/45">
-        {label}
-      </div>
+      <EditableText
+        page="home"
+        path={["site", "heroStats", i, "label"]}
+        value={label}
+        as="div"
+        className="mt-1 text-[9px] sm:text-[10px] uppercase tracking-[0.12em] text-foreground/45"
+      />
     </div>
   );
 }
@@ -528,6 +553,31 @@ function toolIcon(name: string): React.ReactNode {
   );
 }
 
+/* Tool icon with a CMS override: an uploaded image wins over the built-in
+   artwork; in edit mode a hover overlay lets the admin replace/clear it. */
+function ToolCmsIcon({ tool, ti }: { tool: { name: string; icon?: string }; ti: number }) {
+  const { editing } = useEdit();
+  const base = tool.icon ? (
+    <img src={tool.icon} alt={tool.name} className="h-full w-full object-cover" />
+  ) : (
+    toolIcon(tool.name)
+  );
+  if (!editing) return <>{base}</>;
+  return (
+    <span className="relative block h-full w-full">
+      {base}
+      <EditableImage
+        page="home"
+        path={["tools", ti, "icon"]}
+        src={tool.icon ?? ""}
+        alt={tool.name}
+        wrapperClassName="absolute inset-0 block"
+        className="h-full w-full object-cover"
+      />
+    </span>
+  );
+}
+
 function ToolsShowcase() {
   const { data: home } = useHome();
   const tools = home.tools;
@@ -543,19 +593,24 @@ function ToolsShowcase() {
           <span key={i} className="hidden sm:block absolute select-none pointer-events-none text-[11px]" style={{ ...pos as React.CSSProperties, color: "oklch(0.18 0.01 240 / 0.15)" }}>★</span>
         ))}
 
-        <h2 className="text-center font-bold tracking-tightest leading-none" style={{ fontSize: "clamp(28px, 5.5vw, 72px)", color: "oklch(0.38 0.22 255)" }}>
-          [ my toolkit ]
-        </h2>
+        <EditableText
+          page="home"
+          path={["site", "toolkitHeadline"]}
+          value={home.site.toolkitHeadline}
+          as="h2"
+          className="text-center font-bold tracking-tightest leading-none block"
+          style={{ fontSize: "clamp(28px, 5.5vw, 72px)", color: "oklch(0.38 0.22 255)" }}
+        />
 
         {/* Single row of all icons */}
         <div className="mt-6 sm:mt-10 flex items-center justify-center gap-3 sm:gap-5 flex-wrap">
-          {tools.map((tool) => (
-            <div key={tool.name} className="flex flex-col items-center gap-1.5 group">
+          {tools.map((tool, ti) => (
+            <div key={ti} className="flex flex-col items-center gap-1.5 group">
               <div
                 className="rounded-[12px] sm:rounded-[16px] overflow-hidden shadow-[0_4px_14px_-4px_oklch(0.2_0.02_240/0.18)] transition-transform duration-200 group-hover:-translate-y-1"
                 style={{ width: 40, height: 40 }}
               >
-                {toolIcon(tool.name)}
+                <ToolCmsIcon tool={tool} ti={ti} />
               </div>
               <span className="text-[8px] sm:text-[9px] tracking-tight text-foreground/40">{tool.name}</span>
             </div>
@@ -565,7 +620,7 @@ function ToolsShowcase() {
 
       {/* ── Bottom: description cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 divide-y divide-border">
-        {tools.map((tool) => (
+        {tools.map((tool, ti) => (
           <div
             key={tool.name}
             className="flex items-start gap-3 sm:gap-4 px-4 sm:px-7 py-4 sm:py-6 border-b border-border"
@@ -575,18 +630,22 @@ function ToolsShowcase() {
               className="rounded-[10px] sm:rounded-[12px] overflow-hidden shrink-0 shadow-[0_3px_10px_-3px_oklch(0.2_0.02_240/0.18)]"
               style={{ width: 36, height: 36 }}
             >
-              {toolIcon(tool.name)}
+              <ToolCmsIcon tool={tool} ti={ti} />
             </div>
 
             {/* Text */}
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <p className="text-[12px] sm:text-[13px] font-semibold tracking-tight text-foreground">{tool.name}</p>
-                <span className="rounded-full bg-secondary px-2 py-0.5 text-[8px] sm:text-[9px] tracking-tight text-foreground/40">{tool.category}</span>
+                <EditableText page="home" path={["tools", ti, "name"]} value={tool.name} as="p" className="text-[12px] sm:text-[13px] font-semibold tracking-tight text-foreground" />
+                <EditableText page="home" path={["tools", ti, "category"]} value={tool.category} as="span" className="rounded-full bg-secondary px-2 py-0.5 text-[8px] sm:text-[9px] tracking-tight text-foreground/40" />
               </div>
-              <p className="mt-1 sm:mt-1.5 text-[11px] sm:text-[12px] leading-relaxed tracking-tight text-foreground/55">
-                {tool.how}
-              </p>
+              <EditableText
+                page="home"
+                path={["tools", ti, "how"]}
+                value={tool.how}
+                as="p"
+                className="mt-1 sm:mt-1.5 text-[11px] sm:text-[12px] leading-relaxed tracking-tight text-foreground/55"
+              />
             </div>
           </div>
         ))}
@@ -599,9 +658,11 @@ function ToolsShowcase() {
 /* ───────── ABOUT ───────── */
 
 function About() {
+  const { data: home } = useHome();
+  const about = home.about;
   return (
     <section id="about" className="mt-16 sm:mt-20">
-      <SectionHeader index="01" title="About" />
+      <SectionHeader si={0} />
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
 
@@ -610,55 +671,50 @@ function About() {
 
           {/* Punchy statement */}
           <div className="px-5 sm:px-8 pt-6 sm:pt-8 pb-6 border-b border-border">
-            <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3">01 — who i am</p>
+            <EditableText page="home" path={["about", "kickerWho"]} value={about.kickerWho} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3" />
             <p
               className="font-bold tracking-tightest text-foreground leading-[0.92]"
               style={{ fontSize: "clamp(22px, 3vw, 40px)" }}
             >
-              I grow pages.<br />
-              <span style={{ color: "oklch(0.18 0.01 240 / 0.28)" }}>Build brands.</span><br />
-              <span style={{ color: "oklch(0.18 0.01 240 / 0.28)" }}>Make content stick.</span>
+              {about.statement.map((line, i) => (
+                <EditableText
+                  key={i}
+                  page="home"
+                  path={["about", "statement", i]}
+                  value={line}
+                  as="span"
+                  className="block"
+                  style={i === 0 ? undefined : { color: "oklch(0.18 0.01 240 / 0.28)" }}
+                />
+              ))}
             </p>
-            <p className="mt-4 text-[13px] leading-relaxed tracking-tight text-foreground/55 max-w-sm">
-              Social media manager &amp; creative developer from Subic Bay, Philippines.
-              I run the full marketing stack for business owners who don&apos;t want to deal with marketing
-              (or don&apos;t have time for it) — Google Ads, Meta Ads, content, and branding — and I&apos;ve built
-              pages and identities from zero.
-            </p>
+            <EditableText
+              page="home"
+              path={["about", "paragraph"]}
+              value={about.paragraph}
+              as="p"
+              className="mt-4 text-[13px] leading-relaxed tracking-tight text-foreground/55 max-w-sm"
+            />
           </div>
 
           {/* Stats row */}
           <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
-            {[
-              { v: "9",    l: "brands managed"  },
-              { v: "2+",   l: "yrs freelancing"  },
-              { v: "5+",   l: "brands built"     },
-            ].map(({ v, l }) => (
-              <div key={l} className="px-5 py-4">
-                <p className="text-[26px] font-bold tracking-tightest leading-none text-foreground">{v}</p>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-foreground/40">{l}</p>
+            {about.stats.map((s, i) => (
+              <div key={i} className="px-5 py-4">
+                <EditableText page="home" path={["about", "stats", i, "value"]} value={s.value} as="p" className="text-[26px] font-bold tracking-tightest leading-none text-foreground" />
+                <EditableText page="home" path={["about", "stats", i, "label"]} value={s.label} as="p" className="mt-1 text-[10px] uppercase tracking-[0.14em] text-foreground/40" />
               </div>
             ))}
           </div>
 
           {/* Clients */}
           <div className="px-5 sm:px-8 py-5 border-b border-border">
-            <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-4">02 — clients</p>
+            <EditableText page="home" path={["about", "kickerClients"]} value={about.kickerClients} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-4" />
             <div className="grid grid-cols-2 gap-2">
-              {[
-                { name: "Oaklynwear",              sub: "Fashion · Full-stack · USA"       },
-                { name: "Roselyn Atelier",         sub: "Fashion · Full-stack · UK"        },
-                { name: "Lirenne Wear",            sub: "Fashion · Full-stack · USA"       },
-                { name: "Bella Monza",             sub: "Fashion · Full-stack"             },
-                { name: "Nova Noir",               sub: "Fashion · Full-stack · USA"       },
-                { name: "StealandStyle",           sub: "Fashion · Social media"           },
-                { name: "Masinloc Tourism Office", sub: "Creative Strategist · Facebook"   },
-                { name: "Fast Snaking Services",   sub: "Local service · Facebook"         },
-                { name: "The Snappy Nomad",        sub: "Branding strategy · Coming soon"  },
-              ].map(({ name, sub }) => (
-                <div key={name} className="rounded-[8px] border border-border bg-secondary/40 px-3 py-2.5">
-                  <p className="text-[12px] font-medium tracking-tight text-foreground/80">{name}</p>
-                  <p className="text-[10px] tracking-tight text-foreground/40 mt-0.5">{sub}</p>
+              {about.clients.map((c, i) => (
+                <div key={i} className="rounded-[8px] border border-border bg-secondary/40 px-3 py-2.5">
+                  <EditableText page="home" path={["about", "clients", i, "name"]} value={c.name} as="p" className="text-[12px] font-medium tracking-tight text-foreground/80" />
+                  <EditableText page="home" path={["about", "clients", i, "sub"]} value={c.sub} as="p" className="text-[10px] tracking-tight text-foreground/40 mt-0.5" />
                 </div>
               ))}
             </div>
@@ -666,21 +722,14 @@ function About() {
 
           {/* Skills */}
           <div className="px-5 sm:px-8 py-5 flex-1">
-            <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-4">03 — tools &amp; skills</p>
+            <EditableText page="home" path={["about", "kickerSkills"]} value={about.kickerSkills} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-4" />
             <div className="space-y-3">
-              {[
-                { cat: "Design",       items: ["Adobe Illustrator", "Photoshop", "Canva"] },
-                { cat: "Social & Ads", items: ["Google Ads", "Meta Ads Manager", "Instagram", "Facebook", "TikTok", "Content Strategy"] },
-                { cat: "Email",        items: ["Klaviyo", "Email Marketing", "Flows & Automation"] },
-                { cat: "Video",        items: ["CapCut", "Reels", "Motion captions"] },
-                { cat: "AI",           items: ["Claude", "Claude Code", "Higgsfield AI", "ChatGPT"] },
-                { cat: "E-comm",       items: ["Full-Funnel Strategy", "Product Research", "Shopify", "Dropshipping", "Poky", "PPSpy"] },
-              ].map(({ cat, items }) => (
-                <div key={cat} className="flex items-start gap-4">
-                  <span className="w-20 shrink-0 text-[10px] uppercase tracking-[0.12em] text-foreground/35 pt-0.5">{cat}</span>
+              {about.skills.map((g, gi) => (
+                <div key={gi} className="flex items-start gap-4">
+                  <EditableText page="home" path={["about", "skills", gi, "cat"]} value={g.cat} as="span" className="w-20 shrink-0 text-[10px] uppercase tracking-[0.12em] text-foreground/35 pt-0.5" />
                   <div className="flex flex-wrap gap-1.5">
-                    {items.map((item) => (
-                      <span key={item} className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] tracking-tight text-foreground/65">{item}</span>
+                    {g.items.map((item, ii) => (
+                      <EditableText key={ii} page="home" path={["about", "skills", gi, "items", ii]} value={item} as="span" className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] tracking-tight text-foreground/65" />
                     ))}
                   </div>
                 </div>
@@ -714,21 +763,18 @@ function Work() {
   const { items: workItems } = useWork();
   const { data: home } = useHome();
   const site = home.site;
+  const aside = home.workAside;
   return (
     <section id="work" className="mt-20">
-      <SectionHeader index="02" title="Selected work" />
+      <SectionHeader si={1} />
 
       {/* Top bar */}
       <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between px-1 mb-6 gap-2">
         <div className="flex items-center gap-3">
           <span className="h-2 w-2 rounded-full" style={{ background: "var(--traffic-green)" }} />
-          <span className="text-[11px] tracking-tight text-foreground/50">
-            Available for new projects
-          </span>
+          <EditableText page="home" path={["workAside", "availability"]} value={aside.availability} as="span" className="text-[11px] tracking-tight text-foreground/50" />
         </div>
-        <span className="text-[11px] tracking-[0.18em] uppercase text-foreground/30">
-          Shanzster · 2026
-        </span>
+        <EditableText page="home" path={["workAside", "stamp"]} value={aside.stamp} as="span" className="text-[11px] tracking-[0.18em] uppercase text-foreground/30" />
       </div>
 
       {/* 3-column layout — stacks on mobile */}
@@ -738,43 +784,37 @@ function Work() {
         <div className="hidden lg:flex flex-col gap-6">
 
           <div className="rounded-[14px] border border-border bg-card p-5">
-            <p className="text-[9px] uppercase tracking-[0.22em] text-foreground/35 mb-3">currently</p>
+            <EditableText page="home" path={["workAside", "currentlyTitle"]} value={aside.currentlyTitle} as="p" className="text-[9px] uppercase tracking-[0.22em] text-foreground/35 mb-3" />
             <div className="space-y-3">
-              {[
-                { dot: "var(--traffic-green)",  label: "Social media strategy" },
-                { dot: "var(--traffic-yellow)", label: "Brand identity work"   },
-                { dot: "oklch(0.74 0.13 240)",  label: "Video content"         },
-              ].map(({ dot, label }) => (
-                <div key={label} className="flex items-center gap-2.5">
-                  <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: dot }} />
-                  <span className="text-[12px] tracking-tight text-foreground/65">{label}</span>
+              {aside.currently.map((label, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <span
+                    className="h-1.5 w-1.5 rounded-full shrink-0"
+                    style={{ background: ["var(--traffic-green)", "var(--traffic-yellow)", "oklch(0.74 0.13 240)"][i % 3] }}
+                  />
+                  <EditableText page="home" path={["workAside", "currently", i]} value={label} as="span" className="text-[12px] tracking-tight text-foreground/65" />
                 </div>
               ))}
             </div>
           </div>
 
           <div className="rounded-[14px] border border-border bg-card p-5">
-            <p className="text-[9px] uppercase tracking-[0.22em] text-foreground/35 mb-4">by the numbers</p>
+            <EditableText page="home" path={["workAside", "numbersTitle"]} value={aside.numbersTitle} as="p" className="text-[9px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
             <div className="space-y-4">
-              {[
-                { v: "9",    l: "brands managed"   },
-                { v: "5+",   l: "brands built"      },
-                { v: "2+",   l: "yrs freelancing"   },
-                { v: "5",    l: "platforms"          },
-              ].map(({ v, l }) => (
-                <div key={l}>
-                  <p className="text-[24px] font-bold tracking-tightest leading-none text-foreground">{v}</p>
-                  <p className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-foreground/35">{l}</p>
+              {aside.numbers.map((s, i) => (
+                <div key={i}>
+                  <EditableText page="home" path={["workAside", "numbers", i, "value"]} value={s.value} as="p" className="text-[24px] font-bold tracking-tightest leading-none text-foreground" />
+                  <EditableText page="home" path={["workAside", "numbers", i, "label"]} value={s.label} as="p" className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-foreground/35" />
                 </div>
               ))}
             </div>
           </div>
 
           <div className="rounded-[14px] border border-border bg-card p-5">
-            <p className="text-[9px] uppercase tracking-[0.22em] text-foreground/35 mb-3">services</p>
+            <EditableText page="home" path={["workAside", "servicesTitle"]} value={aside.servicesTitle} as="p" className="text-[9px] uppercase tracking-[0.22em] text-foreground/35 mb-3" />
             <div className="flex flex-col gap-1.5">
-              {["Social Media Mgmt", "Brand Identity", "Content Strategy", "Video Editing", "Meta Ads", "Google Ads", "Copywriting"].map((s) => (
-                <span key={s} className="rounded-full border border-border bg-secondary/50 px-2.5 py-1 text-[10px] tracking-tight text-foreground/55 w-fit">{s}</span>
+              {aside.services.map((s, i) => (
+                <EditableText key={i} page="home" path={["workAside", "services", i]} value={s} as="span" className="rounded-full border border-border bg-secondary/50 px-2.5 py-1 text-[10px] tracking-tight text-foreground/55 w-fit" />
               ))}
             </div>
           </div>
@@ -787,7 +827,7 @@ function Work() {
               boxShadow: "0 8px 20px -8px oklch(0.2 0.02 240 / 0.25)",
             }}
           >
-            <p className="text-[9px] uppercase tracking-[0.22em] mb-2.5" style={{ color: "oklch(0.52 0.09 100)" }}>{site.weeklyTitle}</p>
+            <EditableText page="home" path={["site", "weeklyTitle"]} value={site.weeklyTitle} as="p" className="text-[9px] uppercase tracking-[0.22em] mb-2.5" style={{ color: "oklch(0.52 0.09 100)" }} />
             <div className="space-y-1.5 text-[12px] leading-relaxed tracking-tight" style={{ color: "oklch(0.34 0.06 100)" }}>
               {site.weeklyItems.map((it, i) => (
                 <p key={i}>{it.done ? "☑" : "☐"} <EditableText page="home" path={["site", "weeklyItems", i, "text"]} value={it.text} /></p>
@@ -799,9 +839,7 @@ function Work() {
 
         {/* ── Center: folder ── */}
         <div className="flex flex-col items-center overflow-hidden md:overflow-visible">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/30 mb-4 hidden sm:block">
-            hover to open · click to view
-          </p>
+          <EditableText page="home" path={["workAside", "folderHint"]} value={aside.folderHint} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/30 mb-4 hidden sm:block" />
           <div className="w-full overflow-hidden md:overflow-visible">
             <WorkFolderScene items={workItems} />
           </div>
@@ -811,26 +849,16 @@ function Work() {
         <div className="hidden lg:flex flex-col gap-6">
 
           <div className="rounded-[14px] border border-border bg-card p-5">
-            <p className="text-[9px] uppercase tracking-[0.22em] text-foreground/35 mb-4">clients</p>
+            <EditableText page="home" path={["workAside", "clientsTitle"]} value={aside.clientsTitle} as="p" className="text-[9px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
             <div className="space-y-3">
-              {[
-                { name: "Oaklynwear",        tag: "Fashion · US"  },
-                { name: "Roselyn Atelier",   tag: "Fashion · UK"  },
-                { name: "Lirenne Wear",      tag: "Fashion · US"  },
-                { name: "Bella Monza",       tag: "Fashion"       },
-                { name: "Nova Noir",         tag: "Fashion · US"  },
-                { name: "StealandStyle",     tag: "Fashion · IG"  },
-                { name: "Masinloc Tourism",  tag: "Strategy · FB" },
-                { name: "Fast Snaking",      tag: "Service · FB"  },
-                { name: "The Snappy Nomad",  tag: "Brand · Soon"  },
-              ].map(({ name, tag }) => (
-                <div key={name} className="flex items-start gap-2.5">
+              {aside.clients.map(({ name, tag }, i) => (
+                <div key={i} className="flex items-start gap-2.5">
                   <div className="h-7 w-7 rounded-[6px] shrink-0 border border-border bg-secondary flex items-center justify-center">
                     <span className="text-[9px] font-bold text-foreground/40">{name[0]}</span>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium tracking-tight text-foreground/75 leading-tight">{name}</p>
-                    <p className="text-[9px] tracking-tight text-foreground/35">{tag}</p>
+                    <EditableText page="home" path={["workAside", "clients", i, "name"]} value={name} as="p" className="text-[11px] font-medium tracking-tight text-foreground/75 leading-tight" />
+                    <EditableText page="home" path={["workAside", "clients", i, "tag"]} value={tag} as="p" className="text-[9px] tracking-tight text-foreground/35" />
                   </div>
                 </div>
               ))}
@@ -838,35 +866,24 @@ function Work() {
           </div>
 
           <div className="rounded-[14px] border border-border bg-card p-5">
-            <p className="text-[9px] uppercase tracking-[0.22em] text-foreground/35 mb-4">recent</p>
+            <EditableText page="home" path={["workAside", "recentTitle"]} value={aside.recentTitle} as="p" className="text-[9px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
             <div className="space-y-3">
-              {[
-                { label: "Oaklynwear — full-stack takeover",  time: "2026" },
-                { label: "Nova Noir — full-stack launch",     time: "2026" },
-                { label: "Roselyn Atelier — paid + organic",  time: "2026" },
-                { label: "Lirenne Wear — brand & ads",        time: "2026" },
-                { label: "Bella Monza — full-stack setup",    time: "2026" },
-                { label: "StealandStyle — social management", time: "2026" },
-                { label: "Masinloc — Joiners Program",        time: "2026" },
-                { label: "The Snappy Nomad — pre-launch",     time: "2026" },
-              ].map(({ label, time }) => (
-                <div key={label} className="flex items-start justify-between gap-2">
-                  <p className="text-[11px] tracking-tight text-foreground/60 leading-snug">{label}</p>
-                  <span className="text-[9px] tracking-tight text-foreground/30 shrink-0">{time}</span>
+              {aside.recent.map(({ label, time }, i) => (
+                <div key={i} className="flex items-start justify-between gap-2">
+                  <EditableText page="home" path={["workAside", "recent", i, "label"]} value={label} as="p" className="text-[11px] tracking-tight text-foreground/60 leading-snug" />
+                  <EditableText page="home" path={["workAside", "recent", i, "time"]} value={time} as="span" className="text-[9px] tracking-tight text-foreground/30 shrink-0" />
                 </div>
               ))}
             </div>
           </div>
 
           <div className="rounded-[14px] border border-border bg-card p-5">
-            <p className="text-[11px] tracking-tight text-foreground/45 leading-relaxed mb-4">
-              Want something like this for your brand?
-            </p>
+            <EditableText page="home" path={["workAside", "ctaText"]} value={aside.ctaText} as="p" className="text-[11px] tracking-tight text-foreground/45 leading-relaxed mb-4" />
             <a
               href="#contact"
               className="rounded-full bg-foreground px-4 py-2 text-[11px] tracking-tight text-background text-center block transition hover:opacity-85"
             >
-              Let's work together →
+              <EditableText page="home" path={["workAside", "ctaButton"]} value={aside.ctaButton} />
             </a>
           </div>
 
@@ -883,7 +900,7 @@ function Services() {
 
   return (
     <section id="services" className="mt-20">
-      <SectionHeader index="03" title="Services" />
+      <SectionHeader si={2} />
 
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {services.map((s, si) => (
@@ -896,8 +913,8 @@ function Services() {
               <div className="flex items-center gap-1.5">
                 <TrafficLights size={11} />
               </div>
-              <span className="text-[11px] tracking-tight text-foreground/50">{s.file}</span>
-              <span className="text-[10px] tracking-[0.14em] uppercase text-foreground/25">{s.k}</span>
+              <EditableText page="home" path={["services", si, "file"]} value={s.file} as="span" className="text-[11px] tracking-tight text-foreground/50" />
+              <EditableText page="home" path={["services", si, "k"]} value={s.k} as="span" className="text-[10px] tracking-[0.14em] uppercase text-foreground/25" />
             </div>
 
             {/* Content */}
@@ -911,12 +928,12 @@ function Services() {
 
               {/* Includes */}
               <div>
-                <p className="text-[9px] uppercase tracking-[0.18em] text-foreground/30 mb-2">Includes</p>
+                <EditableText page="home" path={["site", "servicesIncludesLabel"]} value={home.site.servicesIncludesLabel} as="p" className="text-[9px] uppercase tracking-[0.18em] text-foreground/30 mb-2" />
                 <ul className="space-y-1.5">
-                  {s.includes.map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-[11px] tracking-tight text-foreground/60">
+                  {s.includes.map((item, ii) => (
+                    <li key={ii} className="flex items-start gap-2 text-[11px] tracking-tight text-foreground/60">
                       <span className="mt-0.5 h-3.5 w-3.5 rounded-full shrink-0 flex items-center justify-center text-[7px] font-bold text-white" style={{ background: "oklch(0.62 0.18 255)" }}>✓</span>
-                      {item}
+                      <EditableText page="home" path={["services", si, "includes", ii]} value={item} />
                     </li>
                   ))}
                 </ul>
@@ -925,12 +942,13 @@ function Services() {
               {/* Footer */}
               <div className="mt-auto pt-3 border-t border-border space-y-2">
                 <div className="flex flex-wrap gap-1.5">
-                  {s.tools.map((t) => (
-                    <span key={t} className="rounded-full bg-secondary border border-border px-2 py-0.5 text-[9.5px] tracking-tight text-foreground/45">{t}</span>
+                  {s.tools.map((t, ti) => (
+                    <EditableText key={ti} page="home" path={["services", si, "tools", ti]} value={t} as="span" className="rounded-full bg-secondary border border-border px-2 py-0.5 text-[9.5px] tracking-tight text-foreground/45" />
                   ))}
                 </div>
                 <p className="text-[10px] tracking-tight text-foreground/35 leading-snug">
-                  <span className="font-medium text-foreground/50">Best for: </span>{s.bestFor}
+                  <EditableText page="home" path={["site", "servicesBestForLabel"]} value={home.site.servicesBestForLabel} as="span" className="font-medium text-foreground/50" />{" "}
+                  <EditableText page="home" path={["services", si, "bestFor"]} value={s.bestFor} />
                 </p>
               </div>
             </div>
@@ -941,11 +959,11 @@ function Services() {
       {/* CTA */}
       <div className="mt-5 rounded-[14px] border border-border bg-card px-8 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <p className="text-[15px] font-semibold tracking-tight text-foreground">Not sure which fits?</p>
-          <p className="mt-0.5 text-[12px] tracking-tight text-foreground/50">Send me a message and we'll figure it out.</p>
+          <EditableText page="home" path={["site", "servicesCtaTitle"]} value={home.site.servicesCtaTitle} as="p" className="text-[15px] font-semibold tracking-tight text-foreground" />
+          <EditableText page="home" path={["site", "servicesCtaBody"]} value={home.site.servicesCtaBody} as="p" className="mt-0.5 text-[12px] tracking-tight text-foreground/50" />
         </div>
         <a href="#contact" className="rounded-full bg-foreground px-6 py-2.5 text-[12px] tracking-tight text-background transition hover:opacity-85 shrink-0">
-          Get in touch →
+          <EditableText page="home" path={["site", "servicesCtaButton"]} value={home.site.servicesCtaButton} />
         </a>
       </div>
     </section>
@@ -960,7 +978,7 @@ function Process() {
 
   return (
     <section id="process" className="mt-20">
-      <SectionHeader index="04" title="How I Work" subtitle="The process, start to finish." />
+      <SectionHeader si={3} />
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {steps.map((s, i) => (
           <div key={s.n} className="rounded-[14px] border border-border bg-card overflow-hidden mac-shadow flex flex-col">
@@ -968,7 +986,7 @@ function Process() {
               <div className="flex items-center gap-1">
                 <TrafficLights size={9} />
               </div>
-              <span className="text-[9px] tracking-tight text-foreground/40">{s.file}</span>
+              <EditableText page="home" path={["process", i, "file"]} value={s.file} as="span" className="text-[9px] tracking-tight text-foreground/40" />
             </div>
             <div className="p-4 flex flex-col flex-1">
               <div className="flex items-center gap-2 mb-3">
@@ -982,9 +1000,10 @@ function Process() {
               </div>
               <EditableText page="home" path={["process", i, "desc"]} value={s.desc} as="p" className="text-[11.5px] leading-relaxed tracking-tight text-foreground/55 mb-3" />
               <ul className="mt-auto space-y-1">
-                {s.details.map((d) => (
-                  <li key={d} className="flex items-center gap-1.5 text-[10.5px] tracking-tight text-foreground/45">
-                    <span className="text-foreground/20">›</span>{d}
+                {s.details.map((d, di) => (
+                  <li key={di} className="flex items-center gap-1.5 text-[10.5px] tracking-tight text-foreground/45">
+                    <span className="text-foreground/20">›</span>
+                    <EditableText page="home" path={["process", i, "details", di]} value={d} />
                   </li>
                 ))}
               </ul>
@@ -1003,7 +1022,7 @@ function Testimonials() {
 
   return (
     <section id="testimonials" className="mt-20">
-      <SectionHeader index="05" title="What Clients Say" />
+      <SectionHeader si={4} />
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         {testimonials.map((t, i) => (
           <TestimonialCard key={i} t={t} index={i} />
@@ -1021,8 +1040,12 @@ function TestimonialCard({
   t: { quote: string; name: string; brand: string; platform: string; initials: string; color: string };
   index: number;
 }) {
+  const { data: home } = useHome();
+  const { editing } = useEdit();
   const ref = useRef<HTMLDivElement>(null);
-  const [stage, setStage] = useState<"idle" | "typing" | "shown">("idle");
+  const [rawStage, setStage] = useState<"idle" | "typing" | "shown">("idle");
+  // Edit mode skips the typing animation so the quote is clickable right away.
+  const stage = editing ? "shown" : rawStage;
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -1076,7 +1099,7 @@ function TestimonialCard({
           className="text-right text-[10px] tracking-tight text-foreground/30 -mt-2"
           style={{ animation: "fade-up-in 0.3s ease 0.15s both" }}
         >
-          Delivered
+          <EditableText page="home" path={["site", "deliveredLabel"]} value={home.site.deliveredLabel} />
         </p>
       )}
       {/* Sender */}
@@ -1085,12 +1108,13 @@ function TestimonialCard({
           className="h-9 w-9 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold text-white"
           style={{ background: t.color }}
         >
-          {t.initials}
+          <EditableText page="home" path={["testimonials", index, "initials"]} value={t.initials} />
         </div>
         <div>
           <EditableText page="home" path={["testimonials", index, "name"]} value={t.name} as="p" className="text-[12px] font-semibold tracking-tight text-foreground/80" />
           <p className="text-[10px] tracking-tight text-foreground/40">
-            <EditableText page="home" path={["testimonials", index, "brand"]} value={t.brand} /> · {t.platform}
+            <EditableText page="home" path={["testimonials", index, "brand"]} value={t.brand} /> ·{" "}
+            <EditableText page="home" path={["testimonials", index, "platform"]} value={t.platform} />
           </p>
         </div>
       </div>
@@ -1105,14 +1129,14 @@ function SocialFeed() {
 
   return (
     <section id="latest" className="mt-20">
-      <SectionHeader index="06" title="Latest Work" subtitle="From the pages I manage." />
+      <SectionHeader si={5} />
       <div className="mt-6 rounded-[16px] border border-border bg-card overflow-hidden mac-shadow">
         {/* Title bar */}
         <div className="flex h-9 items-center justify-between border-b border-border bg-secondary/60 px-4">
           <div className="flex items-center gap-1.5">
             <TrafficLights size={11} />
           </div>
-          <span className="text-[11px] tracking-tight text-foreground/50">latest_posts.grid</span>
+          <EditableText page="home" path={["site", "latestWindowTitle"]} value={home.site.latestWindowTitle} as="span" className="text-[11px] tracking-tight text-foreground/50" />
           <span className="text-[10px] tracking-tight text-foreground/30">{posts.length} items</span>
         </div>
         {/* Grid */}
@@ -1135,16 +1159,14 @@ function SocialFeed() {
           ))}
         </div>
         <div className="px-6 py-4 flex items-center justify-between border-t border-border">
-          <p className="text-[11px] tracking-tight text-foreground/40">
-            Recent posts from managed social media accounts
-          </p>
+          <EditableText page="home" path={["site", "latestFooterNote"]} value={home.site.latestFooterNote} as="p" className="text-[11px] tracking-tight text-foreground/40" />
           <a
             href="https://instagram.com/shanzster.zip"
             target="_blank"
             rel="noopener noreferrer"
             className="text-[11px] tracking-tight text-foreground/50 hover:text-foreground transition"
           >
-            View live ↗
+            <EditableText page="home" path={["site", "latestFooterLink"]} value={home.site.latestFooterLink} />
           </a>
         </div>
       </div>
@@ -1159,13 +1181,13 @@ function FAQ() {
 
   return (
     <section id="faq" className="mt-20">
-      <SectionHeader index="07" title="FAQ" subtitle="Questions I get asked a lot." />
+      <SectionHeader si={6} />
       <div className="mt-6 rounded-[16px] border border-border bg-card overflow-hidden mac-shadow">
         <div className="flex h-9 items-center justify-between border-b border-border bg-secondary/60 px-4">
           <div className="flex items-center gap-1.5">
             <TrafficLights size={11} />
           </div>
-          <span className="text-[11px] tracking-tight text-foreground/50">faq.txt</span>
+          <EditableText page="home" path={["site", "faqWindowTitle"]} value={home.site.faqWindowTitle} as="span" className="text-[11px] tracking-tight text-foreground/50" />
           <div className="w-10" />
         </div>
         <div className="divide-y divide-border">
@@ -1187,7 +1209,7 @@ function Contact() {
   const site = home.site;
   return (
     <section id="contact" className="mt-20">
-      <SectionHeader index="08" title="Contact" />
+      <SectionHeader si={7} />
       <div className="mt-6 grid gap-4 sm:gap-6 lg:grid-cols-12">
         <div className="lg:col-span-8">
           <MacWindow label="Mail —" title="New message">
@@ -1206,16 +1228,16 @@ function Contact() {
                 className="mt-4 text-[12px] sm:text-[13px] leading-relaxed tracking-tight text-foreground/55 max-w-md"
               />
               <div className="mt-6 sm:mt-8 space-y-4 text-[12px] sm:text-[13px] tracking-tight">
-                <Field label="To" value={site.contactEmail} />
-                <Field label="From" value="you@yourbusiness.com" />
-                <Field label="Subject" value="I'd like to work with you" />
+                <Field labelPath={["site", "contactToLabel"]} label={site.contactToLabel} valuePath={["site", "contactEmail"]} value={site.contactEmail} />
+                <Field labelPath={["site", "contactFromLabel"]} label={site.contactFromLabel} valuePath={["site", "contactFromValue"]} value={site.contactFromValue} />
+                <Field labelPath={["site", "contactSubjectLabel"]} label={site.contactSubjectLabel} valuePath={["site", "contactSubjectValue"]} value={site.contactSubjectValue} />
               </div>
               <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
                 <a
                   href={`mailto:${site.contactEmail}`}
                   className="inline-flex rounded-full bg-foreground px-4 sm:px-5 py-2 sm:py-2.5 text-[12px] sm:text-[13px] tracking-tight text-background transition hover:opacity-90"
                 >
-                  Send message →
+                  <EditableText page="home" path={["site", "contactSendButton"]} value={site.contactSendButton} />
                 </a>
                 <button
                   onClick={() => {
@@ -1226,7 +1248,7 @@ function Contact() {
                   }}
                   className="inline-flex rounded-full border border-border bg-card px-4 sm:px-5 py-2 sm:py-2.5 text-[12px] sm:text-[13px] tracking-tight text-foreground/70 transition hover:bg-secondary hover:text-foreground"
                 >
-                  Copy email
+                  <EditableText page="home" path={["site", "contactCopyButton"]} value={site.contactCopyButton} />
                 </button>
               </div>
             </div>
@@ -1244,11 +1266,11 @@ function Contact() {
           </MacWindow>
           <MacWindow title="socials.url">
             <ul className="p-5 text-[13px] tracking-tight space-y-2.5">
-              {site.socials.map(({ label, href, handle }) => (
-                <li key={label} className="flex items-center justify-between">
-                  <span className="text-foreground/60">{label}</span>
+              {site.socials.map(({ label, href, handle }, i) => (
+                <li key={i} className="flex items-center justify-between">
+                  <EditableText page="home" path={["site", "socials", i, "label"]} value={label} as="span" className="text-foreground/60" />
                   <a href={href} target="_blank" rel="noopener noreferrer" className="text-foreground/40 hover:text-foreground transition text-[11px]">
-                    {handle} ↗
+                    <EditableText page="home" path={["site", "socials", i, "handle"]} value={handle ?? ""} /> ↗
                   </a>
                 </li>
               ))}
@@ -1256,7 +1278,7 @@ function Contact() {
           </MacWindow>
           <MacWindow title="location.txt">
             <div className="p-5 text-[13px] tracking-tight">
-              <p className="text-foreground/40 text-[10px] uppercase tracking-[0.18em] mb-1">Based in</p>
+              <EditableText page="home" path={["site", "basedInLabel"]} value={site.basedInLabel} as="p" className="text-foreground/40 text-[10px] uppercase tracking-[0.18em] mb-1" />
               <EditableText page="home" path={["site", "locationCity"]} value={site.locationCity} as="p" className="text-foreground/70" />
               <EditableText page="home" path={["site", "locationNote"]} value={site.locationNote} as="p" className="text-foreground/40 text-[11px] mt-1" />
             </div>
@@ -1267,34 +1289,36 @@ function Contact() {
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({
+  label,
+  value,
+  labelPath,
+  valuePath,
+}: {
+  label: string;
+  value: string;
+  labelPath: (string | number)[];
+  valuePath: (string | number)[];
+}) {
   return (
     <div className="flex gap-4 border-b border-border pb-3">
-      <span className="w-16 text-foreground/40">{label}</span>
-      <span className="text-foreground">{value}</span>
+      <EditableText page="home" path={labelPath} value={label} as="span" className="w-16 text-foreground/40" />
+      <EditableText page="home" path={valuePath} value={value} as="span" className="text-foreground" />
     </div>
   );
 }
 
-function SectionHeader({
-  index,
-  title,
-  subtitle,
-}: {
-  index: string;
-  title: string;
-  subtitle?: string;
-}) {
+function SectionHeader({ si }: { si: number }) {
+  const { data: home } = useHome();
+  const s = home.site.sections[si] ?? { index: "", title: "" };
   return (
     <div className="flex items-end justify-between">
       <div className="flex items-baseline gap-4">
-        <span className="text-[12px] tracking-[0.2em] uppercase text-foreground/40">{index}</span>
-        <h2 className="text-[clamp(28px,3.4vw,44px)] tracking-tightest font-semibold">
-          {title}
-        </h2>
+        <EditableText page="home" path={["site", "sections", si, "index"]} value={s.index} as="span" className="text-[12px] tracking-[0.2em] uppercase text-foreground/40" />
+        <EditableText page="home" path={["site", "sections", si, "title"]} value={s.title} as="h2" className="text-[clamp(28px,3.4vw,44px)] tracking-tightest font-semibold" />
       </div>
-      {subtitle && (
-        <span className="text-[12px] tracking-tight text-foreground/50">{subtitle}</span>
+      {s.subtitle !== undefined && (
+        <EditableText page="home" path={["site", "sections", si, "subtitle"]} value={s.subtitle} as="span" className="text-[12px] tracking-tight text-foreground/50" />
       )}
     </div>
   );
@@ -1311,28 +1335,26 @@ function Footer() {
           <EditableText page="home" path={["site", "footerBlurb"]} value={site.footerBlurb} as="p" className="text-foreground/45 leading-relaxed max-w-[240px]" />
         </div>
         <div className="flex flex-col gap-1.5">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/30 mb-1">Explore</p>
-          {[
-            { label: "Selected Work", href: "/#work" },
-            { label: "Services", href: "/#services" },
-            { label: "Clients", href: "/clients" },
-            { label: "About Me", href: "/about" },
-            { label: "Gallery", href: "/gallery" },
-          ].map(({ label, href }) => (
-            <a key={label} href={href} className="w-fit text-foreground/50 hover:text-foreground transition">{label}</a>
+          <EditableText page="home" path={["site", "exploreTitle"]} value={site.exploreTitle} as="p" className="text-[10px] uppercase tracking-[0.2em] text-foreground/30 mb-1" />
+          {site.footerExplore.map(({ label, href }, i) => (
+            <a key={i} href={href} className="w-fit text-foreground/50 hover:text-foreground transition">
+              <EditableText page="home" path={["site", "footerExplore", i, "label"]} value={label} />
+            </a>
           ))}
         </div>
         <div className="flex flex-col gap-1.5">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/30 mb-1">Connect</p>
-          {site.footerConnect.map(({ label, href }) => (
-            <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="w-fit text-foreground/50 hover:text-foreground transition">{label}</a>
+          <EditableText page="home" path={["site", "connectTitle"]} value={site.connectTitle} as="p" className="text-[10px] uppercase tracking-[0.2em] text-foreground/30 mb-1" />
+          {site.footerConnect.map(({ label, href }, i) => (
+            <a key={i} href={href} target="_blank" rel="noopener noreferrer" className="w-fit text-foreground/50 hover:text-foreground transition">
+              <EditableText page="home" path={["site", "footerConnect", i, "label"]} value={label} />
+            </a>
           ))}
         </div>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-4">
         <EditableText page="home" path={["site", "footerCopyright"]} value={site.footerCopyright} />
         <span className="flex items-center gap-4">
-          <span className="hidden sm:inline text-foreground/35">Press ⌘K to search</span>
+          <EditableText page="home" path={["site", "searchHint"]} value={site.searchHint} as="span" className="hidden sm:inline text-foreground/35" />
           <EditableText page="home" path={["site", "footerTagline"]} value={site.footerTagline} />
         </span>
       </div>

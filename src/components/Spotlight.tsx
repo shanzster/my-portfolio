@@ -43,7 +43,7 @@ const CLIENTS: SpotItem[] = [
   { label: "Nova Noir",              sub: "Client · Fashion",         glyph: "N", to: "/work/novanoir" },
   { label: "Masinloc Tourism",       sub: "Client · Creative Strategy", glyph: "M", to: "/work/masinloc-tourism" },
   { label: "Fast Snaking Services",  sub: "Client · Local Service",   glyph: "F", to: "/work/fast-snaking" },
-  { label: "The Snappy Nomad",       sub: "Client · Coming soon",     glyph: "S", to: "/clients" },
+  { label: "The Snappy Nomad",       sub: "Client · Personal Brand",  glyph: "S", to: "/work/snappy-nomad" },
 ];
 
 const ACTIONS: SpotItem[] = [

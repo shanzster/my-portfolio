@@ -289,6 +289,22 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  /* Boot-screen logo — one full spin while scaling in (first visit only) */
+  @keyframes logo-spin-in {
+    from { transform: rotate(-360deg) scale(0.55); opacity: 0; }
+    to   { transform: rotate(0deg) scale(1); opacity: 1; }
+  }
+
+  /* Flat pulsing placeholder shown behind images while they load */
+  .img-skeleton {
+    background-color: oklch(0.92 0.005 240);
+    animation: img-pulse 1.1s ease-in-out infinite alternate;
+  }
+  @keyframes img-pulse {
+    from { background-color: oklch(0.92 0.005 240); }
+    to   { background-color: oklch(0.87 0.005 240); }
+  }
+
   /* Prevent horizontal panning/scroll on narrow viewports (mobile) so the layout stays fixed */
   @media (max-width: 767px) {
     html, body {

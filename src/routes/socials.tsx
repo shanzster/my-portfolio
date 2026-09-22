@@ -3,7 +3,7 @@ import { useState } from "react";
 import { NavBar } from "@/components/NavBar";
 import { Reveal } from "@/hooks/useScrollReveal";
 import { type Social } from "@/lib/socials-data";
-import { useSocials } from "@/lib/content";
+import { useSocials, useChrome } from "@/lib/content";
 import { EditableText, EditableImage, useEdit } from "@/lib/edit-mode";
 
 export const Route = createFileRoute("/socials")({
@@ -96,6 +96,8 @@ function PostGrid({ s, onOpen }: { s: Social; onOpen: (embed: string) => void })
 
 function SocialCard({ s, onOpen }: { s: Social; onOpen: (embed: string) => void }) {
   const { editing } = useEdit();
+  const { data: chrome } = useChrome();
+  const c = chrome.socialsPage;
   return (
     <div className="rounded-[16px] border border-border bg-card overflow-hidden mac-shadow flex flex-col">
       {/* Header */}
@@ -118,12 +120,12 @@ function SocialCard({ s, onOpen }: { s: Social; onOpen: (embed: string) => void 
                 className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-white"
                 style={{ background: s.color }}
               >
-                ★ My Business
+                {c.myBusinessBadge}
               </span>
             )}
             {s.status === "Coming Soon" && (
               <span className="rounded-full bg-secondary px-2 py-0.5 text-[8px] uppercase tracking-[0.12em] text-foreground/45">
-                Soon
+                {c.soonBadge}
               </span>
             )}
           </div>
@@ -152,7 +154,7 @@ function SocialCard({ s, onOpen }: { s: Social; onOpen: (embed: string) => void 
           className="flex items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-[11px] font-medium tracking-tight text-white transition hover:opacity-90"
           style={{ background: s.color }}
         >
-          {s.platform === "Instagram" ? "Follow" : "View"} ↗
+          {s.platform === "Instagram" ? c.followLabel : c.viewLabel} ↗
         </a>
       </div>
     </div>
@@ -197,6 +199,8 @@ function EmbedLightbox({ url, onClose }: { url: string; onClose: () => void }) {
 function SocialsPage() {
   const [embed, setEmbed] = useState<string | null>(null);
   const { items: socials } = useSocials();
+  const { data: chrome } = useChrome();
+  const c = chrome.socialsPage;
   const igCount = socials.filter((s) => s.platform === "Instagram").length;
 
   return (
@@ -209,31 +213,28 @@ function SocialsPage() {
           to="/gallery"
           className="inline-flex items-center gap-2 text-[12px] tracking-tight text-foreground/40 hover:text-foreground transition mb-10"
         >
-          ← Gallery
+          <EditableText page="chrome" path={["socialsPage", "back"]} value={c.back} />
         </Link>
 
         {/* Header */}
         <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3">Socials</p>
+            <EditableText page="chrome" path={["socialsPage", "kicker"]} value={c.kicker} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3" />
             <h1
               className="font-bold tracking-tightest text-foreground leading-[0.88]"
               style={{ fontSize: "clamp(44px, 6vw, 80px)" }}
             >
-              The accounts<br />
-              <span style={{ color: "oklch(0.18 0.01 240 / 0.22)" }}>I run.</span>
+              <EditableText page="chrome" path={["socialsPage", "titleTop"]} value={c.titleTop} as="span" className="block" />
+              <EditableText page="chrome" path={["socialsPage", "titleAccent"]} value={c.titleAccent} as="span" className="block" style={{ color: "oklch(0.18 0.01 240 / 0.22)" }} />
             </h1>
-            <p className="mt-5 text-[14px] leading-relaxed tracking-tight text-foreground/55 max-w-lg">
-              Every store and page I manage, laid out like a feed. Tap a post to open it live; tap Follow to open the
-              account.
-            </p>
+            <EditableText page="chrome" path={["socialsPage", "blurb"]} value={c.blurb} as="p" className="mt-5 text-[14px] leading-relaxed tracking-tight text-foreground/55 max-w-lg" />
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] tracking-tight text-foreground/50">
-              {igCount} Instagram
+              {igCount} <EditableText page="chrome" path={["socialsPage", "igSuffix"]} value={c.igSuffix} />
             </span>
             <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] tracking-tight text-foreground/50">
-              {socials.length} accounts
+              {socials.length} <EditableText page="chrome" path={["socialsPage", "accountsSuffix"]} value={c.accountsSuffix} />
             </span>
           </div>
         </div>
@@ -250,12 +251,7 @@ function SocialsPage() {
         {/* How-to note */}
         <div className="mt-10 rounded-[12px] border border-border bg-secondary/40 px-5 py-4 flex items-start gap-3">
           <span className="text-foreground/25 text-[16px] mt-0.5">◎</span>
-          <p className="text-[11px] tracking-tight text-foreground/40 leading-relaxed">
-            Free & no API: on Instagram, open a post → <span className="text-foreground/60">⋯ → Copy link</span>, then
-            paste it into that account's <code className="bg-secondary px-1 py-0.5 rounded text-[10px]">posts</code> array
-            in <code className="bg-secondary px-1 py-0.5 rounded text-[10px]">src/routes/socials.tsx</code>. It fills a
-            grid tile and opens live on click.
-          </p>
+          <EditableText page="chrome" path={["socialsPage", "note"]} value={c.note} as="p" className="text-[11px] tracking-tight text-foreground/40 leading-relaxed" />
         </div>
       </main>
     </div>

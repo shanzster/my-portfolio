@@ -1,5 +1,8 @@
 export type WorkItem = {
   id: string;
+  /* When true the project is hidden from the public site (folder cards etc.)
+     but stays editable in /admin and previewable at its direct /work/{id} URL. */
+  hidden?: boolean;
   title: string;
   client: string;
   tag: string;
@@ -54,6 +57,7 @@ export const WORK_ITEMS: WorkItem[] = [
     platform: "Instagram · TikTok · Meta Ads · Google Ads",
     duration: "Ongoing",
     tools: ["Meta Ads Manager", "Google Ads", "Canva", "Photoshop", "CapCut", "Notion"],
+    websiteUrl: "https://oaklynwear.com",
 
     overview:
       "Oaklynwear is a US-based fashion brand. I run everything on the marketing side — Google Ads, Meta Ads, social media management, branding, and day-to-day account management. One person, the full stack.",

@@ -16,7 +16,46 @@ export type VideoIntro = {
   url: string; // Cloudinary/MP4 URL, or a YouTube/Vimeo link
 };
 
+/* Page-level chrome text for the /about route (headers, cards, buttons). */
+export type AboutPageText = {
+  back: string;
+  basedInLabel: string;
+  basedIn: string;
+  helloKicker: string;
+  name: string;
+  role: string;
+  paragraph: string;
+  socialChips: { label: string; href: string }[];
+  quickStats: { v: string; l: string }[];
+  clockTitle: string;
+  clockStatus: string;
+  availabilityTitle: string;
+  availabilitySub: string;
+  availabilityButton: string;
+  platformsTitle: string;
+  platforms: string[];
+  currentlyTitle: string;
+  currently: string[];
+  kickerStory: string;
+  kickerJourney: string;
+  kickerBeliefs: string;
+  kickerCredentials: string;
+  kickerTools: string;
+  kickerDevices: string;
+  terminalTitle: string;
+  terminalPrompt: string;
+  terminalCommand: string;
+  journeyCta: string;
+  videoHide: string;
+  videoWatch: string;
+  ctaTitle: string;
+  ctaBody: string;
+  ctaClients: string;
+  ctaHire: string;
+};
+
 export type AboutContent = {
+  page: AboutPageText;
   videoIntro: VideoIntro;
   credentials: CredentialSection[];
   devices: Device[];
@@ -27,6 +66,55 @@ export type AboutContent = {
 };
 
 export const ABOUT: AboutContent = {
+  page: {
+    back: "← Back",
+    basedInLabel: "Based in",
+    basedIn: "Subic Bay, Philippines 🇵🇭",
+    helloKicker: "Hello, I'm",
+    name: "Shanzster",
+    role: "Social Media Manager · Brand Designer · Video Editor",
+    paragraph:
+      "I run the full marketing stack for business owners who don't want to deal with marketing (or don't have time for it) — Google Ads, Meta Ads, content, and branding — plus creative strategy for tourism and local businesses. From zero to consistent.",
+    socialChips: [
+      { label: "@shanzster.zip", href: "https://instagram.com/shanzster.zip" },
+      { label: "in/shanzster", href: "https://www.linkedin.com/in/shanzster/" },
+      { label: "Email me", href: "mailto:seanthetechyyy@gmail.com" },
+    ],
+    quickStats: [
+      { v: "7", l: "clients" },
+      { v: "2+", l: "yrs exp" },
+      { v: "5+", l: "brands" },
+    ],
+    clockTitle: "Philippine Standard Time · UTC+8",
+    clockStatus: "Online · Philippines 🇵🇭",
+    availabilityTitle: "Available for work",
+    availabilitySub: "Open to new clients · 2026",
+    availabilityButton: "Hire me →",
+    platformsTitle: "Platforms I manage",
+    platforms: ["Instagram", "Facebook", "TikTok", "Meta Ads", "Google Ads"],
+    currentlyTitle: "Currently",
+    currently: [
+      "Running growth for 4 fashion e-commerce brands",
+      "Building The Snappy Nomad — my own travel camera brand",
+      "Sketching daily — Procreate & a Canson sketchbook",
+    ],
+    kickerStory: "01 — my story",
+    kickerJourney: "02 — the journey",
+    kickerBeliefs: "03 — how I work",
+    kickerCredentials: "04 — credentials",
+    kickerTools: "05 — tools I use daily",
+    kickerDevices: "06 — setup & devices",
+    terminalTitle: "shanzster — zsh — 80×24",
+    terminalPrompt: "shanzster@subic-bay",
+    terminalCommand: "cat my-story.txt",
+    journeyCta: "Let's talk →",
+    videoHide: "Hide",
+    videoWatch: "Watch",
+    ctaTitle: "Now you know me — let's talk about your brand.",
+    ctaBody: "I reply within 24 hours. Usually faster.",
+    ctaClients: "See clients →",
+    ctaHire: "Hire me →",
+  },
   videoIntro: {
     enabled: true,
     buttonLabel: "Watch my video introduction",

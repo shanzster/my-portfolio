@@ -5,7 +5,9 @@ import {
   createRootRouteWithContext,
   useRouter,
 } from "@tanstack/react-router";
+import { useState } from "react";
 import { MenuBar } from "@/components/MenuBar";
+import { BootScreen } from "@/components/BootScreen";
 import { Spotlight } from "@/components/Spotlight";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
@@ -76,11 +78,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [booted, setBooted] = useState(false);
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <EditProvider>
+          {!booted && <BootScreen onDone={() => setBooted(true)} />}
           <MenuBar />
           <Spotlight />
           <Toaster position="bottom-center" />

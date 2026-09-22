@@ -3,7 +3,8 @@ import { useState } from "react";
 import { NavBar } from "@/components/NavBar";
 import { Reveal } from "@/hooks/useScrollReveal";
 import { type Folder, type MediaItem } from "@/lib/gallery-data";
-import { useGallery } from "@/lib/content";
+import { useGallery, useChrome } from "@/lib/content";
+import { EditableText, EditableImage } from "@/lib/edit-mode";
 
 export const Route = createFileRoute("/gallery")({
   component: GalleryPage,
@@ -45,6 +46,7 @@ function FolderIcon({ color, tabColor, size = 72 }: { color: string; tabColor: s
 /* ─── FOLDER CARD (2×2 grid) ─── */
 
 function FolderCard({ folder, onClick, index }: { folder: Folder; onClick: () => void; index: number }) {
+  const { data: chrome } = useChrome();
   const [hovered, setHovered] = useState(false);
 
   // Up to 3 previews peeking out of the folder — real files first
@@ -100,8 +102,8 @@ function FolderCard({ folder, onClick, index }: { folder: Folder; onClick: () =>
 
       {/* Label */}
       <div className="text-center">
-        <p className="text-[14px] font-semibold tracking-tight text-foreground">{folder.label}</p>
-        <p className="mt-1 text-[11px] tracking-tight text-foreground/40 leading-snug max-w-[160px]">{folder.description}</p>
+        <EditableText collection="gallery" id={folder.id} item={folder} path={["label"]} value={folder.label} as="p" className="text-[14px] font-semibold tracking-tight text-foreground" />
+        <EditableText collection="gallery" id={folder.id} item={folder} path={["description"]} value={folder.description} as="p" className="mt-1 text-[11px] tracking-tight text-foreground/40 leading-snug max-w-[160px]" />
       </div>
 
       {/* Count badge */}
@@ -112,7 +114,7 @@ function FolderCard({ folder, onClick, index }: { folder: Folder; onClick: () =>
           color: hovered ? "white" : "oklch(0.18 0.01 240 / 0.45)",
         }}
       >
-        {(folder.items ?? []).length} items · open →
+        {(folder.items ?? []).length} <EditableText page="chrome" path={["galleryPage", "openSuffix"]} value={chrome.galleryPage.openSuffix} />
       </div>
     </button>
   );
@@ -126,14 +128,18 @@ const ASPECT_CLASSES: Record<MediaItem["aspect"], string> = {
   landscape: "aspect-[16/9]",
 };
 
-function MediaCard({ item, onClick }: { item: MediaItem; onClick: () => void }) {
+function MediaCard({ item, onClick, binding }: { item: MediaItem; onClick: () => void; binding?: { folder: Folder; idx: number } }) {
   return (
     <button className="group relative focus:outline-none text-left" onClick={onClick} aria-label={`View ${item.title}`}>
       <div
         className={`relative w-full rounded-[10px] overflow-hidden border border-border/40 ${ASPECT_CLASSES[item.aspect]} transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-[0_10px_30px_-8px_oklch(0.2_0.02_240/0.22)]`}
         style={{ background: item.bg }}
       >
-        {item.src && item.type === "image" && <img src={item.src} alt={item.title} className="absolute inset-0 w-full h-full object-cover" />}
+        {item.src && item.type === "image" && (binding ? (
+          <EditableImage collection="gallery" id={binding.folder.id} item={binding.folder} path={["items", binding.idx, "src"]} src={item.src} alt={item.title} wrapperClassName="absolute inset-0" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <img src={item.src} alt={item.title} className="absolute inset-0 w-full h-full object-cover" />
+        ))}
         {!item.src && (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-white/10 text-[24px]">{item.type === "video" ? "▶" : "✦"}</span>
@@ -148,8 +154,17 @@ function MediaCard({ item, onClick }: { item: MediaItem; onClick: () => void }) 
           </div>
         )}
       </div>
-      <p className="mt-1.5 text-[10px] font-medium tracking-tight text-foreground/60 leading-snug">{item.title}</p>
-      <p className="text-[9px] tracking-tight text-foreground/30 mt-0.5">{item.client}</p>
+      {binding ? (
+        <>
+          <EditableText collection="gallery" id={binding.folder.id} item={binding.folder} path={["items", binding.idx, "title"]} value={item.title} as="p" className="mt-1.5 text-[10px] font-medium tracking-tight text-foreground/60 leading-snug" />
+          <EditableText collection="gallery" id={binding.folder.id} item={binding.folder} path={["items", binding.idx, "client"]} value={item.client} as="p" className="text-[9px] tracking-tight text-foreground/30 mt-0.5" />
+        </>
+      ) : (
+        <>
+          <p className="mt-1.5 text-[10px] font-medium tracking-tight text-foreground/60 leading-snug">{item.title}</p>
+          <p className="text-[9px] tracking-tight text-foreground/30 mt-0.5">{item.client}</p>
+        </>
+      )}
     </button>
   );
 }
@@ -192,6 +207,8 @@ function Lightbox({ item, onClose }: { item: MediaItem; onClose: () => void }) {
 /* ─── OPEN FOLDER VIEW ─── */
 
 function FolderView({ folder, onClose, onItemClick }: { folder: Folder; onClose: () => void; onItemClick: (i: MediaItem) => void }) {
+  const { data: chrome } = useChrome();
+  const c = chrome.galleryPage;
   return (
     <div style={{ animation: "modal-in 0.3s cubic-bezier(.2,.8,.2,1) both" }}>
       {/* Folder header */}
@@ -199,23 +216,23 @@ function FolderView({ folder, onClose, onItemClick }: { folder: Folder; onClose:
         <div className="flex items-center gap-3">
           <FolderIcon color={folder.color} tabColor={folder.tabColor} size={36} />
           <div>
-            <h2 className="text-[18px] font-bold tracking-tightest text-foreground">{folder.label}</h2>
-            <p className="text-[11px] tracking-tight text-foreground/40">{(folder.items ?? []).length} items</p>
+            <EditableText collection="gallery" id={folder.id} item={folder} path={["label"]} value={folder.label} as="h2" className="text-[18px] font-bold tracking-tightest text-foreground block" />
+            <p className="text-[11px] tracking-tight text-foreground/40">{(folder.items ?? []).length} <EditableText page="chrome" path={["galleryPage", "itemsLabel"]} value={c.itemsLabel} /></p>
           </div>
         </div>
         <button
           onClick={onClose}
           className="flex items-center gap-1.5 rounded-full border border-border bg-secondary px-4 py-1.5 text-[11px] tracking-tight text-foreground/50 hover:text-foreground transition"
         >
-          ← All folders
+          <EditableText page="chrome" path={["galleryPage", "allFoldersButton"]} value={c.allFoldersButton} />
         </button>
       </div>
 
       {/* Grid */}
       <div style={{ columns: "3 160px", columnGap: "1rem" }}>
-        {(folder.items ?? []).map((item) => (
+        {(folder.items ?? []).map((item, idx) => (
           <div key={item.id} className="mb-4 break-inside-avoid">
-            <MediaCard item={item} onClick={() => onItemClick(item)} />
+            <MediaCard item={item} binding={{ folder, idx }} onClick={() => onItemClick(item)} />
           </div>
         ))}
       </div>
@@ -223,9 +240,7 @@ function FolderView({ folder, onClose, onItemClick }: { folder: Folder; onClose:
       {/* Add media note */}
       <div className="mt-10 rounded-[12px] border border-border bg-secondary/40 px-5 py-4 flex items-start gap-3">
         <span className="text-foreground/25 text-[16px] mt-0.5">📁</span>
-        <p className="text-[11px] tracking-tight text-foreground/40 leading-relaxed">
-          Add or edit items in the <code className="bg-secondary px-1 py-0.5 rounded text-[10px]">Gallery</code> tab of <code className="bg-secondary px-1 py-0.5 rounded text-[10px]">/admin</code> — set each item's image to a file path or URL.
-        </p>
+        <EditableText page="chrome" path={["galleryPage", "addNote"]} value={c.addNote} as="p" className="text-[11px] tracking-tight text-foreground/40 leading-relaxed" />
       </div>
     </div>
   );
@@ -235,7 +250,9 @@ function FolderView({ folder, onClose, onItemClick }: { folder: Folder; onClose:
 
 function GalleryPage() {
   const { items: FOLDERS } = useGallery();
-  const RECENTS = FOLDERS.flatMap((f) => (f.items ?? []).filter((i) => i.src));
+  const { data: chrome } = useChrome();
+  const c = chrome.galleryPage;
+  const RECENTS = FOLDERS.flatMap((f) => (f.items ?? []).map((item, idx) => ({ item, folder: f, idx })).filter((r) => r.item.src));
   const [openFolder, setOpenFolder] = useState<Folder | null>(null);
   const [lightbox, setLightbox] = useState<MediaItem | null>(null);
   const navigate = useNavigate();
@@ -262,27 +279,25 @@ function GalleryPage() {
       <main className="mx-auto max-w-[1100px] px-6 pt-10 sm:px-10">
 
         <Link to="/" className="inline-flex items-center gap-2 text-[12px] tracking-tight text-foreground/40 hover:text-foreground transition mb-10">
-          ← Back
+          <EditableText page="chrome" path={["galleryPage", "back"]} value={c.back} />
         </Link>
 
         {/* Header */}
         <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3">Gallery</p>
+            <EditableText page="chrome" path={["galleryPage", "kicker"]} value={c.kicker} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3" />
             <h1 className="font-bold tracking-tightest text-foreground leading-[0.88]" style={{ fontSize: "clamp(44px, 6vw, 80px)" }}>
-              All the work.<br />
-              <span style={{ color: "oklch(0.18 0.01 240 / 0.22)" }}>Every piece.</span>
+              <EditableText page="chrome" path={["galleryPage", "titleTop"]} value={c.titleTop} as="span" className="block" />
+              <EditableText page="chrome" path={["galleryPage", "titleAccent"]} value={c.titleAccent} as="span" className="block" style={{ color: "oklch(0.18 0.01 240 / 0.22)" }} />
             </h1>
-            <p className="mt-5 text-[14px] leading-relaxed tracking-tight text-foreground/55 max-w-lg">
-              Graphics, video, and the numbers behind them — organized the way I'd organize a desktop. Hover a folder to peek inside.
-            </p>
+            <EditableText page="chrome" path={["galleryPage", "blurb"]} value={c.blurb} as="p" className="mt-5 text-[14px] leading-relaxed tracking-tight text-foreground/55 max-w-lg" />
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] tracking-tight text-foreground/50">
-              {FOLDERS.reduce((n, f) => n + (f.items ?? []).length, 0)} files
+              {FOLDERS.reduce((n, f) => n + (f.items ?? []).length, 0)} <EditableText page="chrome" path={["galleryPage", "filesSuffix"]} value={c.filesSuffix} />
             </span>
             <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] tracking-tight text-foreground/50">
-              {FOLDERS.length} folders
+              {FOLDERS.length} <EditableText page="chrome" path={["galleryPage", "foldersSuffix"]} value={c.foldersSuffix} />
             </span>
           </div>
         </div>
@@ -301,19 +316,19 @@ function GalleryPage() {
               <div className="mt-14">
                 <div className="flex items-end justify-between mb-5">
                   <div className="flex items-baseline gap-3">
-                    <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35">Recents</p>
-                    <p className="text-[11px] tracking-tight text-foreground/30">click to preview</p>
+                    <EditableText page="chrome" path={["galleryPage", "recentsLabel"]} value={c.recentsLabel} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35" />
+                    <EditableText page="chrome" path={["galleryPage", "clickToPreview"]} value={c.clickToPreview} as="p" className="text-[11px] tracking-tight text-foreground/30" />
                   </div>
-                  <p className="text-[11px] tracking-tight text-foreground/35">{RECENTS.length} files</p>
+                  <p className="text-[11px] tracking-tight text-foreground/35">{RECENTS.length} <EditableText page="chrome" path={["galleryPage", "filesSuffix"]} value={c.filesSuffix} /></p>
                 </div>
                 <div style={{ columns: "4 180px", columnGap: "1rem" }}>
-                  {RECENTS.map((item, i) => (
+                  {RECENTS.map((r, i) => (
                     <div
-                      key={item.id}
+                      key={r.item.id}
                       className="mb-4 break-inside-avoid"
                       style={{ animation: `fade-up-in 0.45s cubic-bezier(.2,.8,.2,1) ${i * 40}ms both` }}
                     >
-                      <MediaCard item={item} onClick={() => setLightbox(item)} />
+                      <MediaCard item={r.item} binding={{ folder: r.folder, idx: r.idx }} onClick={() => setLightbox(r.item)} />
                     </div>
                   ))}
                 </div>

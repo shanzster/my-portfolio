@@ -7,6 +7,8 @@ import metaLogo from "@/image_reference/logos/meta.png";
 import canvaLogo from "@/image_reference/logos/canva.png";
 import { useIsClient } from "@/hooks/useIsClient";
 import { TrafficLights } from "@/components/TrafficLights";
+import { useHome } from "@/lib/content";
+import { EditableText } from "@/lib/edit-mode";
 
 function getIsCompactDevice() {
   const isNarrowViewport = window.matchMedia("(max-width: 767px)").matches;
@@ -224,20 +226,23 @@ function FolderIcon({ size = "sm" }: { size?: "sm" | "md" }) {
 }
 
 /* ─── Desktop element renderer ─── */
-function DesktopItem({ el }: { el: (typeof DESKTOP_ELEMENTS)[number] }) {
+function DesktopItem({ el, index, label }: { el: (typeof DESKTOP_ELEMENTS)[number]; index: number; label: string }) {
   const pos: React.CSSProperties = {
     position: "absolute",
     top: (el as any).top,
     left: (el as any).left,
     right: (el as any).right,
   };
+  const editableLabel = (
+    <EditableText page="home" path={["heroFolder", "desktopLabels", index]} value={label} />
+  );
 
   if (el.type === "folder") {
     return (
       <div style={pos} className="flex flex-col items-center gap-1 select-none">
         <FolderIcon size={(el as any).size} />
         <span className="text-[10px] tracking-tight text-foreground/55 text-center leading-tight max-w-[70px]">
-          {el.label}
+          {editableLabel}
         </span>
       </div>
     );
@@ -252,7 +257,7 @@ function DesktopItem({ el }: { el: (typeof DESKTOP_ELEMENTS)[number] }) {
         >
           {(el as any).icon}
         </div>
-        <span className="text-[10px] tracking-tight text-foreground/55">{el.label}</span>
+        <span className="text-[10px] tracking-tight text-foreground/55">{editableLabel}</span>
       </div>
     );
   }
@@ -272,7 +277,7 @@ function DesktopItem({ el }: { el: (typeof DESKTOP_ELEMENTS)[number] }) {
           {preview.content}
         </div>
         <span className="text-[10px] tracking-tight text-foreground/55 text-center leading-tight max-w-[80px]">
-          {el.label}
+          {editableLabel}
         </span>
       </div>
     );
@@ -284,9 +289,11 @@ function DesktopItem({ el }: { el: (typeof DESKTOP_ELEMENTS)[number] }) {
 /* ─── Modal ─── */
 function ServiceModal({
   service,
+  index,
   onClose,
 }: {
   service: Service;
+  index: number;
   onClose: () => void;
 }) {
   const modal = (
@@ -319,31 +326,27 @@ function ServiceModal({
               {service.icon}
             </span>
             <div>
-              <h3 className="text-[22px] font-bold tracking-tightest leading-tight text-foreground">
-                {service.label}
-              </h3>
-              <p className="mt-0.5 text-[13px] tracking-tight text-foreground/50">
-                {service.tagline}
-              </p>
+              <EditableText page="home" path={["heroFolder", "services", index, "label"]} value={service.label} as="h3" className="text-[22px] font-bold tracking-tightest leading-tight text-foreground" />
+              <EditableText page="home" path={["heroFolder", "services", index, "tagline"]} value={service.tagline} as="p" className="mt-0.5 text-[13px] tracking-tight text-foreground/50" />
             </div>
           </div>
 
           <div className="mt-6 space-y-3">
             {service.story.map((para, i) => (
-              <p key={i} className="text-[13.5px] leading-relaxed tracking-tight text-foreground/75">
-                {para}
-              </p>
+              <EditableText key={i} page="home" path={["heroFolder", "services", index, "story", i]} value={para} as="p" className="text-[13.5px] leading-relaxed tracking-tight text-foreground/75" />
             ))}
           </div>
 
           <div className="mt-6 flex flex-wrap gap-2">
-            {service.tags.map((tag) => (
-              <span
-                key={tag}
+            {service.tags.map((tag, ti) => (
+              <EditableText
+                key={ti}
+                page="home"
+                path={["heroFolder", "services", index, "tags", ti]}
+                value={tag}
+                as="span"
                 className="rounded-full border border-border bg-secondary/60 px-3 py-1 text-[11px] tracking-tight text-foreground/60"
-              >
-                {tag}
-              </span>
+              />
             ))}
           </div>
         </div>
@@ -358,6 +361,7 @@ function ServiceModal({
 function ServicePaper({
   service,
   index,
+  readMore,
   open,
   hoveredIndex,
   onHover,
@@ -366,11 +370,12 @@ function ServicePaper({
 }: {
   service: Service;
   index: number;
+  readMore: string;
   open: boolean;
   hoveredIndex: number | null;
   onHover: (i: number) => void;
   onLeave: () => void;
-  onClick: (s: Service) => void;
+  onClick: (s: Service, i: number) => void;
 }) {
   const isHovered = hoveredIndex === index;
   const isNeighbor =
@@ -405,7 +410,7 @@ function ServicePaper({
       onClick={(e) => {
         if (!open) return;
         e.stopPropagation();
-        onClick(service);
+        onClick(service, index);
       }}
     >
       <div
@@ -430,21 +435,15 @@ function ServicePaper({
             <span className="text-[13px]" style={{ color: "var(--folder)" }}>
               {service.icon}
             </span>
-            <p className="text-[11px] font-semibold tracking-tight text-foreground/85 leading-snug">
-              {service.label}
-            </p>
+            <EditableText page="home" path={["heroFolder", "services", index, "label"]} value={service.label} as="p" className="text-[11px] font-semibold tracking-tight text-foreground/85 leading-snug" />
           </div>
 
           <div
             className="overflow-hidden transition-all duration-300"
             style={{ maxHeight: isHovered ? 70 : 0, opacity: isHovered ? 1 : 0 }}
           >
-            <p className="mt-1.5 text-[10.5px] leading-snug tracking-tight text-foreground/55">
-              {service.tagline}
-            </p>
-            <p className="mt-2 text-[10px] tracking-[0.12em] uppercase text-foreground/35">
-              click to read more →
-            </p>
+            <EditableText page="home" path={["heroFolder", "services", index, "tagline"]} value={service.tagline} as="p" className="mt-1.5 text-[10.5px] leading-snug tracking-tight text-foreground/55" />
+            <EditableText page="home" path={["heroFolder", "readMore"]} value={readMore} as="p" className="mt-2 text-[10px] tracking-[0.12em] uppercase text-foreground/35" />
           </div>
         </div>
       </div>
@@ -453,7 +452,7 @@ function ServicePaper({
 }
 
 /* ─── Big central folder ─── */
-function BigFolder({ open }: { open: boolean }) {
+function BigFolder({ open, label }: { open: boolean; label: string }) {
   return (
     <div
       className="relative select-none cursor-default"
@@ -507,7 +506,7 @@ function BigFolder({ open }: { open: boolean }) {
         />
         {!open && (
           <div className="absolute bottom-4 right-5 text-[11px] tracking-[0.22em] uppercase text-white/45 font-medium">
-            portfolio
+            <EditableText page="home" path={["heroFolder", "folderLabel"]} value={label} />
           </div>
         )}
       </div>
@@ -517,9 +516,13 @@ function BigFolder({ open }: { open: boolean }) {
 
 /* ─── Main export ─── */
 export function HeroFolder() {
+  const { data: home } = useHome();
+  const hf = home.heroFolder;
+  // CMS text merged over the in-code geometry/icon seed by index.
+  const services: Service[] = SERVICES.map((s, i) => ({ ...s, ...(hf.services[i] ?? {}) }));
   const [open, setOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [activeService, setActiveService] = useState<Service | null>(null);
+  const [activeService, setActiveService] = useState<{ service: Service; index: number } | null>(null);
   const [isCompactDevice, setIsCompactDevice] = useState<boolean>(false);
   const [mobileModalOpen, setMobileModalOpen] = useState(false);
   const isClient = useIsClient();
@@ -557,32 +560,34 @@ export function HeroFolder() {
   return (
     <>
       {activeService && (
-        <ServiceModal service={activeService} onClose={() => setActiveService(null)} />
+        <ServiceModal service={activeService.service} index={activeService.index} onClose={() => setActiveService(null)} />
       )}
 
       {mobileModalOpen && createPortal(
         <div className="fixed inset-0 flex items-center justify-center p-2" style={{ zIndex: 99999, background: 'rgba(0,0,0,0.6)', overflowX: 'hidden' }} onClick={() => setMobileModalOpen(false)}>
           <div className="w-full rounded-[12px] border border-border bg-card p-2 sm:p-3" style={{ margin: '0 16px', width: 'auto', maxWidth: 360, boxSizing: 'border-box', overflowX: 'hidden', wordBreak: 'break-word', overflowWrap: 'break-word' }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-sm">Choose a service</h3>
+              <EditableText page="home" path={["heroFolder", "chooseTitle"]} value={hf.chooseTitle} as="h3" className="font-semibold text-sm" />
               <button onClick={() => setMobileModalOpen(false)} className="text-sm text-foreground/60">Close</button>
             </div>
             <div style={{ maxHeight: '78vh', overflowY: 'auto', overflowX: 'hidden' }} className="space-y-2">
-              {SERVICES.map((s, i) => (
-                <div key={s.label} className="rounded-[10px] border border-border bg-secondary/5 p-2">
+              {services.map((s, i) => (
+                <div key={i} className="rounded-[10px] border border-border bg-secondary/5 p-2">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <span className="text-[18px]" style={{ color: 'var(--folder)' }}>{s.icon}</span>
                       <div>
-                        <div className="text-sm font-semibold text-foreground">{s.label}</div>
-                        <div className="text-[11px] text-foreground/60">{s.tagline}</div>
+                        <EditableText page="home" path={["heroFolder", "services", i, "label"]} value={s.label} as="div" className="text-sm font-semibold text-foreground" />
+                        <EditableText page="home" path={["heroFolder", "services", i, "tagline"]} value={s.tagline} as="div" className="text-[11px] text-foreground/60" />
                       </div>
                     </div>
                     <button onClick={() => setModalExpandedIndex(modalExpandedIndex === i ? null : i)} className="text-sm text-foreground/50">{modalExpandedIndex === i ? 'Hide' : 'Show'}</button>
                   </div>
                   {modalExpandedIndex === i && (
                     <div className="mt-2 text-[13px] text-foreground/75">
-                      {s.story.map((p, idx) => (<p key={idx} className="mt-1 text-[13px]">{p}</p>))}
+                      {s.story.map((p, idx) => (
+                        <EditableText key={idx} page="home" path={["heroFolder", "services", i, "story", idx]} value={p} as="p" className="mt-1 text-[13px]" />
+                      ))}
                     </div>
                   )}
                 </div>
@@ -615,8 +620,8 @@ export function HeroFolder() {
       >
 
         {/* ── Static desktop elements (hidden on small screens) ── */}
-        <div className="hidden md:block">{DESKTOP_ELEMENTS.map((el) => (
-          <DesktopItem key={el.id} el={el} />
+        <div className="hidden md:block">{DESKTOP_ELEMENTS.map((el, i) => (
+          <DesktopItem key={el.id} el={el} index={i} label={hf.desktopLabels[i] ?? el.label} />
         ))}</div>
 
         {/* ── Folder stage — self-contained, fixed height reserves room for the
@@ -634,16 +639,17 @@ export function HeroFolder() {
           }}
         >
           {/* Papers (desktop only) — fan up from bottom:168 within the stage */}
-          <div className="hidden md:block">{SERVICES.map((s, i) => (
+          <div className="hidden md:block">{services.map((s, i) => (
             <ServicePaper
-              key={s.label}
+              key={i}
               service={s}
               index={i}
+              readMore={hf.readMore}
               open={open}
               hoveredIndex={hoveredIndex}
               onHover={setHoveredIndex}
               onLeave={() => setHoveredIndex(null)}
-              onClick={setActiveService}
+              onClick={(service, index) => setActiveService({ service, index })}
             />
           ))}</div>
 
@@ -651,7 +657,7 @@ export function HeroFolder() {
 
           {/* Big folder (visible on all sizes) — pinned to the stage bottom */}
           <div className="absolute inset-x-0 bottom-0 flex justify-center pb-6">
-            <BigFolder open={open} />
+            <BigFolder open={open} label={hf.folderLabel} />
           </div>
         </div>
 
@@ -660,9 +666,7 @@ export function HeroFolder() {
           className="hidden md:block absolute left-1/2 -translate-x-1/2 pointer-events-none"
           style={{ bottom: 8, opacity: open ? 0 : 1, transition: "opacity 0.3s" }}
         >
-          <p className="text-[10px] tracking-[0.2em] uppercase text-foreground/25">
-            hover the folder
-          </p>
+          <EditableText page="home" path={["heroFolder", "hoverHint"]} value={hf.hoverHint} as="p" className="text-[10px] tracking-[0.2em] uppercase text-foreground/25" />
         </div>
       </div>
     </>

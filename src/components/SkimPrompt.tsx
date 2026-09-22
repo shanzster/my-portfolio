@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
 import { TrafficLights } from "@/components/TrafficLights";
+import { useHome } from "@/lib/content";
+import { EditableText } from "@/lib/edit-mode";
 
 /**
  * Entry modal (once per session) offering a no-scroll "skim" version of the
@@ -9,6 +11,8 @@ import { TrafficLights } from "@/components/TrafficLights";
  * remembers the choice for the session.
  */
 export function SkimPrompt() {
+  const { data: home } = useHome();
+  const prompt = home.skimPrompt;
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -41,16 +45,14 @@ export function SkimPrompt() {
         {/* Title bar */}
         <div className="flex h-9 items-center justify-between border-b border-border bg-secondary/60 px-3">
           <TrafficLights size={11} onClose={dismiss} />
-          <span className="text-[11px] tracking-tight text-foreground/55">quick view</span>
+          <EditableText page="home" path={["skimPrompt", "windowTitle"]} value={prompt.windowTitle} as="span" className="text-[11px] tracking-tight text-foreground/55" />
           <div className="w-[44px]" />
         </div>
 
         {/* Body */}
         <div className="p-6">
-          <h3 className="text-[18px] font-bold tracking-tightest text-foreground leading-tight">In a hurry?</h3>
-          <p className="mt-1.5 text-[12.5px] leading-relaxed tracking-tight text-foreground/55">
-            Skim the whole portfolio in one screen — no scrolling, just the essentials. Or take the full tour.
-          </p>
+          <EditableText page="home" path={["skimPrompt", "title"]} value={prompt.title} as="h3" className="text-[18px] font-bold tracking-tightest text-foreground leading-tight" />
+          <EditableText page="home" path={["skimPrompt", "body"]} value={prompt.body} as="p" className="mt-1.5 text-[12.5px] leading-relaxed tracking-tight text-foreground/55" />
 
           <div className="mt-5 flex flex-col gap-2">
             <Link
@@ -58,13 +60,13 @@ export function SkimPrompt() {
               onClick={dismiss}
               className="rounded-full bg-foreground px-5 py-2.5 text-center text-[12px] font-medium tracking-tight text-background transition hover:opacity-85"
             >
-              I'll skim through it →
+              <EditableText page="home" path={["skimPrompt", "skimButton"]} value={prompt.skimButton} />
             </Link>
             <button
               onClick={dismiss}
               className="rounded-full border border-border bg-card px-5 py-2.5 text-[12px] tracking-tight text-foreground/60 transition hover:bg-secondary hover:text-foreground"
             >
-              Explore the full site
+              <EditableText page="home" path={["skimPrompt", "fullButton"]} value={prompt.fullButton} />
             </button>
           </div>
         </div>

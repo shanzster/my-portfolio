@@ -4,7 +4,7 @@ import { NavBar } from "@/components/NavBar";
 import { TrafficLights } from "@/components/TrafficLights";
 import { Reveal } from "@/hooks/useScrollReveal";
 import { type Client } from "@/lib/clients-data";
-import { useClients, useClientsMeta } from "@/lib/content";
+import { useClients, useClientsMeta, useChrome } from "@/lib/content";
 import { EditableText, EditableImage, useEdit } from "@/lib/edit-mode";
 
 export const Route = createFileRoute("/clients")({
@@ -21,30 +21,40 @@ export const Route = createFileRoute("/clients")({
 
 
 /* ─── Image placeholder ─── */
-function ImgSlot({ src, caption, color }: { src?: string; caption: string; color: string }) {
+function ImgSlot({ src, caption, color, client, path }: { src?: string; caption: string; color: string; client?: Client; path?: (string | number)[] }) {
+  const { data: chrome } = useChrome();
   return (
     <div className="flex flex-col gap-2">
       <div
         className="w-full rounded-[12px] border border-border/40 overflow-hidden flex items-center justify-center"
         style={{ height: 200, background: color }}
       >
-        {src
+        {client && path ? (
+          <EditableImage collection="clients" id={client.id} item={client} path={[...path, "src"]} src={src ?? ""} alt={caption} wrapperClassName="block w-full h-full" className="w-full h-full object-cover" />
+        ) : src
           ? <img src={src} alt={caption} className="w-full h-full object-cover" />
           : (
             <div className="text-center p-4">
               <p className="text-white/10 text-[24px]">✦</p>
-              <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-white/20">add screenshot</p>
+              <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-white/20">{chrome.clientsPage.addScreenshotLabel}</p>
             </div>
           )
         }
       </div>
-      <p className="text-[11px] tracking-tight text-foreground/45 leading-snug">{caption}</p>
+      {client && path ? (
+        <EditableText collection="clients" id={client.id} item={client} path={[...path, "caption"]} value={caption} as="p" className="text-[11px] tracking-tight text-foreground/45 leading-snug" />
+      ) : (
+        <p className="text-[11px] tracking-tight text-foreground/45 leading-snug">{caption}</p>
+      )}
     </div>
   );
 }
 
 /* ─── Client modal – full-page sheet from bottom ─── */
 function ClientModal({ client, onClose }: { client: Client; onClose: () => void }) {
+  const { data: chrome } = useChrome();
+  const cp = chrome.clientsPage;
+  const { editing } = useEdit();
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
@@ -79,7 +89,7 @@ function ClientModal({ client, onClose }: { client: Client; onClose: () => void 
           style={{ borderRadius: "20px 20px 0 0" }}
         >
           <TrafficLights onClose={onClose} />
-          <span className="text-[11px] tracking-tight text-foreground/50">{client.handle}</span>
+          <EditableText collection="clients" id={client.id} item={client} path={["handle"]} value={client.handle} as="span" className="text-[11px] tracking-tight text-foreground/50" />
           <button onClick={onClose} className="text-[11px] tracking-tight text-foreground/35 hover:text-foreground transition">✕ close</button>
         </div>
 
@@ -105,9 +115,12 @@ function ClientModal({ client, onClose }: { client: Client; onClose: () => void 
             <div className="relative z-10 px-10 pb-8 w-full">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-foreground/40 mb-1">{client.category}</p>
-                  <h2 className="text-[clamp(28px,4vw,52px)] font-bold tracking-tightest text-foreground leading-tight">{client.name}</h2>
-                  <p className="mt-1 text-[13px] tracking-tight text-foreground/50">{client.platform} · {client.handle}</p>
+                  <EditableText collection="clients" id={client.id} item={client} path={["category"]} value={client.category} as="p" className="text-[10px] uppercase tracking-[0.24em] text-foreground/40 mb-1" />
+                  <EditableText collection="clients" id={client.id} item={client} path={["name"]} value={client.name} as="h2" className="text-[clamp(28px,4vw,52px)] font-bold tracking-tightest text-foreground leading-tight block" />
+                  <p className="mt-1 text-[13px] tracking-tight text-foreground/50">
+                    <EditableText collection="clients" id={client.id} item={client} path={["platform"]} value={client.platform} /> ·{" "}
+                    <EditableText collection="clients" id={client.id} item={client} path={["handle"]} value={client.handle} />
+                  </p>
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <span
@@ -123,7 +136,7 @@ function ClientModal({ client, onClose }: { client: Client; onClose: () => void 
                     rel="noopener noreferrer"
                     className="rounded-full border border-border bg-card/80 px-4 py-1.5 text-[11px] tracking-tight text-foreground/60 hover:bg-card transition"
                   >
-                    View page ↗
+                    <EditableText page="chrome" path={["clientsPage", "viewPage"]} value={cp.viewPage} />
                   </a>
                 </div>
               </div>
@@ -133,20 +146,20 @@ function ClientModal({ client, onClose }: { client: Client; onClose: () => void 
           {/* Description + services */}
           <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border border-b border-border">
             <div className="px-8 py-7 lg:col-span-2">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/30 mb-3">About this client</p>
-              <p className="text-[14px] leading-relaxed tracking-tight text-foreground/65">{client.description}</p>
+              <EditableText page="chrome" path={["clientsPage", "aboutLabel"]} value={cp.aboutLabel} as="p" className="text-[10px] uppercase tracking-[0.2em] text-foreground/30 mb-3" />
+              <EditableText collection="clients" id={client.id} item={client} path={["description"]} value={client.description} as="p" className="text-[14px] leading-relaxed tracking-tight text-foreground/65" />
             </div>
             <div className="px-8 py-7">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/30 mb-3">Services provided</p>
+              <EditableText page="chrome" path={["clientsPage", "servicesLabel"]} value={cp.servicesLabel} as="p" className="text-[10px] uppercase tracking-[0.2em] text-foreground/30 mb-3" />
               <div className="flex flex-wrap gap-2">
-                {client.services.map((s) => (
-                  <span key={s} className="rounded-full bg-secondary border border-border px-3 py-1 text-[11px] tracking-tight text-foreground/55">{s}</span>
+                {client.services.map((s, si) => (
+                  <EditableText key={si} collection="clients" id={client.id} item={client} path={["services", si]} value={s} as="span" className="rounded-full bg-secondary border border-border px-3 py-1 text-[11px] tracking-tight text-foreground/55" />
                 ))}
               </div>
               <div className="mt-5">
                 {client.status === "Coming Soon" ? (
                   <span className="inline-flex rounded-full border border-border px-4 py-2 text-[11px] tracking-tight text-foreground/30 cursor-default">
-                    Case study coming soon
+                    {cp.caseStudySoon}
                   </span>
                 ) : (
                   <Link
@@ -155,7 +168,7 @@ function ClientModal({ client, onClose }: { client: Client; onClose: () => void 
                     className="inline-flex rounded-full bg-foreground px-4 py-2 text-[11px] tracking-tight text-background hover:opacity-85 transition"
                     onClick={onClose}
                   >
-                    Full case study →
+                    <EditableText page="chrome" path={["clientsPage", "fullCaseStudy"]} value={cp.fullCaseStudy} />
                   </Link>
                 )}
               </div>
@@ -168,7 +181,7 @@ function ClientModal({ client, onClose }: { client: Client; onClose: () => void 
               <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/30 mb-6">{section.label}</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {section.items!.map((item, i) => (
-                  <ImgSlot key={i} src={item.src} caption={item.caption} color={`${client.color}${i % 2 === 0 ? "cc" : "99"}`} />
+                  <ImgSlot key={i} src={item.src} caption={item.caption} color={`${client.color}${i % 2 === 0 ? "cc" : "99"}`} client={client} path={[section.key, i]} />
                 ))}
               </div>
             </div>
@@ -229,6 +242,7 @@ function CountUp({ value, duration = 900 }: { value: string; duration?: number }
 /* ─── Desktop icon (grid view) ─── */
 function ClientIcon({ client, index, onOpen }: { client: Client; index: number; onOpen: (c: Client) => void }) {
   const { editing } = useEdit();
+  const { data: chrome } = useChrome();
   const isComingSoon = client.status === "Coming Soon";
   return (
     <button
@@ -264,7 +278,7 @@ function ClientIcon({ client, index, onOpen }: { client: Client; index: number; 
             className="absolute top-2 right-2 rounded-full px-1.5 py-0.5 text-[8px] uppercase tracking-[0.12em] font-medium border"
             style={{ background: "oklch(0.15 0.01 240 / 0.75)", color: "oklch(0.75 0.12 255)", borderColor: "oklch(0.62 0.16 255 / 0.4)", backdropFilter: "blur(4px)" }}
           >
-            Soon
+            {chrome.clientsPage.soonLabel}
           </div>
         ) : (
           <div
@@ -277,7 +291,7 @@ function ClientIcon({ client, index, onOpen }: { client: Client; index: number; 
       {/* Label — Finder selection highlight on hover */}
       <div className="px-2 py-0.5 rounded-[4px] text-center text-foreground transition-colors duration-150 group-hover:bg-[oklch(0.62_0.18_255)] group-hover:text-white">
         <EditableText collection="clients" id={client.id} item={client} path={["name"]} value={client.name} as="p" className="text-[12px] font-medium tracking-tight leading-tight" />
-        <p className="text-[10px] tracking-tight opacity-60 mt-0.5">{client.platform}</p>
+        <EditableText collection="clients" id={client.id} item={client} path={["platform"]} value={client.platform} as="p" className="text-[10px] tracking-tight opacity-60 mt-0.5" />
       </div>
     </button>
   );
@@ -286,6 +300,7 @@ function ClientIcon({ client, index, onOpen }: { client: Client; index: number; 
 /* ─── List row (list view) ─── */
 function ClientRow({ client, index, onOpen }: { client: Client; index: number; onOpen: (c: Client) => void }) {
   const { editing } = useEdit();
+  const { data: chrome } = useChrome();
   const isComingSoon = client.status === "Coming Soon";
   return (
     <button
@@ -311,13 +326,13 @@ function ClientRow({ client, index, onOpen }: { client: Client; index: number; o
         </div>
       </div>
       <EditableText collection="clients" id={client.id} item={client} path={["category"]} value={client.category} as="span" className="hidden sm:block text-[12px] tracking-tight text-foreground/50 truncate" />
-      <span className="hidden sm:block text-[12px] tracking-tight text-foreground/50 truncate">{client.platform}</span>
+      <EditableText collection="clients" id={client.id} item={client} path={["platform"]} value={client.platform} as="span" className="hidden sm:block text-[12px] tracking-tight text-foreground/50 truncate" />
       <span className="flex items-center gap-1.5 justify-end">
         <span
           className="h-1.5 w-1.5 rounded-full"
           style={{ background: isComingSoon ? "oklch(0.62 0.16 255)" : "var(--traffic-green)" }}
         />
-        <span className="text-[11px] tracking-tight text-foreground/45">{isComingSoon ? "Soon" : "Active"}</span>
+        <span className="text-[11px] tracking-tight text-foreground/45">{isComingSoon ? chrome.clientsPage.soonLabel : chrome.clientsPage.activeLabel}</span>
       </span>
     </button>
   );
@@ -327,6 +342,9 @@ function ClientRow({ client, index, onOpen }: { client: Client; index: number; o
 function ClientsPage() {
   const { items: CLIENTS } = useClients();
   const { data: clientsMeta } = useClientsMeta();
+  const { data: chrome } = useChrome();
+  const cp = chrome.clientsPage;
+  const { editing } = useEdit();
   const STATS = clientsMeta.stats;
   const FILTERS = clientsMeta.filters;
   const [active, setActive] = useState<Client | null>(null);
@@ -358,7 +376,7 @@ function ClientsPage() {
           >
             <div className="flex h-10 items-center justify-between border-b border-border bg-secondary/60 px-4" style={{ borderRadius: "20px 20px 0 0" }}>
               <TrafficLights onClose={() => setShowComingSoon(false)} />
-              <span className="text-[11px] tracking-tight text-foreground/45">The Snappy Nomad</span>
+              <EditableText page="chrome" path={["clientsPage", "comingSoon", "windowTitle"]} value={cp.comingSoon.windowTitle} as="span" className="text-[11px] tracking-tight text-foreground/45" />
               <button onClick={() => setShowComingSoon(false)} className="text-[11px] tracking-tight text-foreground/35 hover:text-foreground transition">✕ close</button>
             </div>
             <div className="px-8 py-8 text-center">
@@ -368,21 +386,19 @@ function ClientsPage() {
               >
                 <span className="text-[30px]">🏗️</span>
               </div>
-              <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-2">Coming Soon</p>
-              <h3 className="text-[20px] font-bold tracking-tightest text-foreground leading-tight mb-3">
-                Brand is being built<br />right now.
-              </h3>
+              <EditableText page="chrome" path={["clientsPage", "comingSoon", "kicker"]} value={cp.comingSoon.kicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-2" />
+              <EditableText page="chrome" path={["clientsPage", "comingSoon", "title"]} value={cp.comingSoon.title} as="h3" className="text-[20px] font-bold tracking-tightest text-foreground leading-tight mb-3 block" />
               <p className="text-[13px] leading-relaxed tracking-tight text-foreground/55 mb-6">
-                Come back later to see it — or get updates on{" "}
+                <EditableText page="chrome" path={["clientsPage", "comingSoon", "body"]} value={cp.comingSoon.body} />{" "}
                 <a
                   href="https://instagram.com/shanzster.zip"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-semibold text-foreground/80 underline underline-offset-2 hover:text-foreground transition"
                 >
-                  @shanzster.zip
+                  <EditableText page="chrome" path={["clientsPage", "comingSoon", "handle"]} value={cp.comingSoon.handle} />
                 </a>{" "}
-                on Instagram.
+                <EditableText page="chrome" path={["clientsPage", "comingSoon", "bodyEnd"]} value={cp.comingSoon.bodyEnd} />
               </p>
               <div className="flex flex-col gap-2.5">
                 <a
@@ -391,13 +407,13 @@ function ClientsPage() {
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 rounded-full bg-foreground px-6 py-2.5 text-[12px] tracking-tight text-background transition hover:opacity-85"
                 >
-                  Follow @shanzster.zip ↗
+                  <EditableText page="chrome" path={["clientsPage", "comingSoon", "follow"]} value={cp.comingSoon.follow} />
                 </a>
                 <button
                   onClick={() => setShowComingSoon(false)}
                   className="rounded-full border border-border px-6 py-2.5 text-[12px] tracking-tight text-foreground/50 transition hover:bg-secondary"
                 >
-                  Got it
+                  <EditableText page="chrome" path={["clientsPage", "comingSoon", "gotIt"]} value={cp.comingSoon.gotIt} />
                 </button>
               </div>
             </div>
@@ -409,29 +425,31 @@ function ClientsPage() {
 
         {/* Back */}
         <Link to="/" className="inline-flex items-center gap-2 text-[12px] tracking-tight text-foreground/40 hover:text-foreground transition mb-10">
-          ← Back
+          <EditableText page="chrome" path={["clientsPage", "back"]} value={cp.back} />
         </Link>
 
         {/* Header */}
         <div className="mb-10">
-          <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3">Clients</p>
+          <EditableText page="chrome" path={["clientsPage", "kicker"]} value={cp.kicker} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3" />
           <h1 className="font-bold tracking-tightest text-foreground leading-[0.88]" style={{ fontSize: "clamp(44px, 6vw, 80px)" }}>
-            Brands I've<br />
-            <span style={{ color: "oklch(0.18 0.01 240 / 0.25)" }}>worked with.</span>
+            <EditableText page="chrome" path={["clientsPage", "titleTop"]} value={cp.titleTop} as="span" className="block" />
+            <EditableText page="chrome" path={["clientsPage", "titleAccent"]} value={cp.titleAccent} as="span" className="block" style={{ color: "oklch(0.18 0.01 240 / 0.25)" }} />
           </h1>
-          <p className="mt-5 text-[14px] leading-relaxed tracking-tight text-foreground/55 max-w-lg">
-            Every client is different — different audience, different voice, different goal. Click a client to see how I worked with them.
-          </p>
+          <EditableText page="chrome" path={["clientsPage", "blurb"]} value={cp.blurb} as="p" className="mt-5 text-[14px] leading-relaxed tracking-tight text-foreground/55 max-w-lg" />
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-border border border-border rounded-[14px] overflow-hidden bg-card mb-10">
-          {STATS.map(({ v, l }) => (
-            <div key={l} className="px-6 py-5">
+          {STATS.map(({ v, l }, i) => (
+            <div key={i} className="px-6 py-5">
               <p className="text-[28px] font-bold tracking-tightest leading-none text-foreground">
-                <CountUp value={v} />
+                {editing ? (
+                  <EditableText page="clientsMeta" path={["stats", i, "v"]} value={v} />
+                ) : (
+                  <CountUp value={v} />
+                )}
               </p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-foreground/40">{l}</p>
+              <EditableText page="clientsMeta" path={["stats", i, "l"]} value={l} as="p" className="mt-1 text-[10px] uppercase tracking-[0.14em] text-foreground/40" />
             </div>
           ))}
         </div>
@@ -442,8 +460,8 @@ function ClientsPage() {
           {/* Finder title bar */}
           <div className="flex h-9 items-center justify-between border-b border-border bg-secondary/60 px-4">
             <TrafficLights size={11} />
-            <span className="text-[11px] tracking-tight text-foreground/50">Finder — clients</span>
-            <span className="text-[10px] tracking-tight text-foreground/30">{visibleClients.length} items</span>
+            <EditableText page="chrome" path={["clientsPage", "finderTitle"]} value={cp.finderTitle} as="span" className="text-[11px] tracking-tight text-foreground/50" />
+            <span className="text-[10px] tracking-tight text-foreground/30">{visibleClients.length} <EditableText page="chrome" path={["clientsPage", "itemsSuffix"]} value={cp.itemsSuffix} /></span>
           </div>
 
           {/* Finder toolbar — filter tags + view toggle */}
@@ -456,7 +474,7 @@ function ClientsPage() {
               </div>
               {/* Filter tags */}
               <div className="flex flex-wrap items-center gap-1.5">
-                {FILTERS.map((f) => {
+                {FILTERS.map((f, fi) => {
                   const isActive = filter === f.label;
                   return (
                     <button
@@ -469,7 +487,7 @@ function ClientsPage() {
                       }`}
                     >
                       <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: f.dot }} />
-                      {f.label}
+                      <EditableText page="clientsMeta" path={["filters", fi, "label"]} value={f.label} />
                     </button>
                   );
                 })}
@@ -515,10 +533,10 @@ function ClientsPage() {
             /* ── List view ── */
             <div>
               <div className="hidden sm:grid grid-cols-[2fr_1.6fr_1.4fr_auto] gap-4 px-6 py-2 border-b border-border bg-secondary/20 text-[10px] uppercase tracking-[0.14em] text-foreground/35">
-                <span>Name</span>
-                <span>Category</span>
-                <span>Platform</span>
-                <span className="text-right">Status</span>
+                <EditableText page="chrome" path={["clientsPage", "colName"]} value={cp.colName} as="span" />
+                <EditableText page="chrome" path={["clientsPage", "colCategory"]} value={cp.colCategory} as="span" />
+                <EditableText page="chrome" path={["clientsPage", "colPlatform"]} value={cp.colPlatform} as="span" />
+                <EditableText page="chrome" path={["clientsPage", "colStatus"]} value={cp.colStatus} as="span" className="text-right" />
               </div>
               <div className="divide-y divide-border">
                 {visibleClients.map((client, i) => (
@@ -531,11 +549,11 @@ function ClientsPage() {
           {/* Finder status bar */}
           <div className="border-t border-border px-5 py-2 flex items-center justify-between bg-secondary/30">
             <p className="text-[10px] tracking-tight text-foreground/35">
-              Macintosh HD ▸ shanzster ▸ Clients{filter !== "All" ? ` ▸ ${filter}` : ""} · click to open
+              <EditableText page="chrome" path={["clientsPage", "statusPath"]} value={cp.statusPath} />{filter !== "All" ? ` ▸ ${filter}` : ""} · click to open
             </p>
             <div className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--traffic-green)" }} />
-              <p className="text-[10px] tracking-tight text-foreground/35">{visibleClients.length} of {CLIENTS.length} shown</p>
+              <p className="text-[10px] tracking-tight text-foreground/35">{visibleClients.length} of {CLIENTS.length} <EditableText page="chrome" path={["clientsPage", "shownSuffix"]} value={cp.shownSuffix} /></p>
             </div>
           </div>
         </div>
@@ -544,11 +562,11 @@ function ClientsPage() {
         {/* CTA */}
         <div className="mt-8 rounded-[14px] border border-border bg-card px-8 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <p className="text-[15px] font-semibold tracking-tight text-foreground">Want to be on this list?</p>
-            <p className="mt-1 text-[12px] tracking-tight text-foreground/50">I'm open to new clients. Let's talk.</p>
+            <EditableText page="chrome" path={["clientsPage", "ctaTitle"]} value={cp.ctaTitle} as="p" className="text-[15px] font-semibold tracking-tight text-foreground" />
+            <EditableText page="chrome" path={["clientsPage", "ctaBody"]} value={cp.ctaBody} as="p" className="mt-1 text-[12px] tracking-tight text-foreground/50" />
           </div>
           <Link to="/" hash="contact" className="rounded-full bg-foreground px-6 py-2.5 text-[12px] tracking-tight text-background transition hover:opacity-85 shrink-0">
-            Get in touch →
+            <EditableText page="chrome" path={["clientsPage", "ctaButton"]} value={cp.ctaButton} />
           </Link>
         </div>
 

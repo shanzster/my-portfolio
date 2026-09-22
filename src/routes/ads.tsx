@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { NavBar } from "@/components/NavBar";
 import { type Media as Ad } from "@/lib/media-data";
-import { useAds } from "@/lib/content";
+import { useAds, useChrome } from "@/lib/content";
 import { EditableText, EditableImage, useEdit } from "@/lib/edit-mode";
 
 export const Route = createFileRoute("/ads")({
@@ -18,6 +18,7 @@ export const Route = createFileRoute("/ads")({
 /* ─── AD CARD ─── */
 function AdCard({ ad, onClick }: { ad: Ad; onClick: () => void }) {
   const { editing } = useEdit();
+  const { data: chrome } = useChrome();
   return (
     <button
       onClick={() => { if (!editing) onClick(); }}
@@ -33,7 +34,7 @@ function AdCard({ ad, onClick }: { ad: Ad; onClick: () => void }) {
           <div className="w-full h-full flex flex-col items-center justify-center gap-2">
             <span className="text-white/10 text-[32px]">⬡</span>
             <p className="text-white/12 text-[10px] tracking-[0.14em] uppercase">
-              Add Ad
+              {chrome.ads.addLabel}
             </p>
           </div>
         )}
@@ -47,7 +48,7 @@ function AdCard({ ad, onClick }: { ad: Ad; onClick: () => void }) {
         <div className="absolute inset-0 bg-background/0 group-hover:bg-background/10 transition-colors duration-300 flex items-center justify-center">
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <div className="px-4 py-2 rounded-full bg-background/90 backdrop-blur-sm border border-border text-[11px] tracking-tight text-foreground">
-              View Full Size
+              {chrome.ads.viewFullSize}
             </div>
           </div>
         </div>
@@ -173,6 +174,8 @@ function FullViewModal({
 /* ─── PAGE ─── */
 function AdsPage() {
   const { items: ADS } = useAds();
+  const { data: chrome } = useChrome();
+  const c = chrome.ads;
   const [selectedAd, setSelectedAd] = useState<Ad | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
@@ -209,22 +212,23 @@ function AdsPage() {
           to="/gallery" 
           className="inline-flex items-center gap-2 text-[12px] tracking-tight text-foreground/40 hover:text-foreground transition mb-10"
         >
-          ← Back to Gallery
+          <EditableText page="chrome" path={["ads", "back"]} value={c.back} />
         </Link>
-        
+
         {/* Header */}
         <div className="mb-12">
-          <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3">
-            Gallery · Ads
-          </p>
-          <h1 
-            className="font-bold tracking-tightest text-foreground leading-[0.88]" 
+          <EditableText page="chrome" path={["ads", "kicker"]} value={c.kicker} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3" />
+          <EditableText
+            page="chrome"
+            path={["ads", "title"]}
+            value={c.title}
+            as="h1"
+            className="font-bold tracking-tightest text-foreground leading-[0.88] block"
             style={{ fontSize: "clamp(36px, 5vw, 64px)" }}
-          >
-            Campaign Analytics
-          </h1>
+          />
           <p className="mt-3 text-[13px] tracking-tight text-foreground/40 max-w-md">
-            Analytics reports, content calendars, and campaign performance data — {ADS.length} campaign pieces.
+            <EditableText page="chrome" path={["ads", "blurb"]} value={c.blurb} /> — {ADS.length}{" "}
+            <EditableText page="chrome" path={["ads", "countSuffix"]} value={c.countSuffix} />
           </p>
         </div>
 

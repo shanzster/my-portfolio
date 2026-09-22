@@ -18,6 +18,7 @@ import { FOLDERS, type Folder } from "@/lib/gallery-data";
 import { ABOUT, type AboutContent } from "@/lib/about-data";
 import { HOME, type HomeContent } from "@/lib/home-data";
 import { SKIM, type SkimContent } from "@/lib/skim-data";
+import { CHROME, type ChromeContent } from "@/lib/chrome-data";
 
 /* Every CMS item carries an internal `_order` sort key the admin controls; it
    never leaks into the public UI. The identifying field is `id` for most
@@ -143,6 +144,7 @@ export const PAGES = {
   home: { seed: HOME as unknown as Record<string, unknown>, label: "Home page" },
   skim: { seed: SKIM as unknown as Record<string, unknown>, label: "Skim page" },
   clientsMeta: { seed: CLIENTS_META as unknown as Record<string, unknown>, label: "Clients — stats & filters" },
+  chrome: { seed: CHROME as unknown as Record<string, unknown>, label: "Page headers & labels" },
 } as const;
 
 export type PageId = keyof typeof PAGES;
@@ -181,6 +183,7 @@ export const useAbout = () => useDoc<AboutContent>("about", ABOUT);
 export const useHome = () => useDoc<HomeContent>("home", HOME);
 export const useSkim = () => useDoc<SkimContent>("skim", SKIM);
 export const useClientsMeta = () => useDoc<ClientsMeta>("clientsMeta", CLIENTS_META);
+export const useChrome = () => useDoc<ChromeContent>("chrome", CHROME);
 
 export async function savePage(pageId: PageId, data: Record<string, unknown>): Promise<void> {
   await setDoc(doc(db, "pages", pageId), stripUndefined(data));

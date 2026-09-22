@@ -16,6 +16,9 @@ import {
   savePage,
   useHome,
   useAbout,
+  useSkim,
+  useClientsMeta,
+  useChrome,
   type CollectionName,
   type PageId,
 } from "@/lib/content";
@@ -67,6 +70,9 @@ export function EditProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { data: home } = useHome();
   const { data: about } = useAbout();
+  const { data: skim } = useSkim();
+  const { data: clientsMeta } = useClientsMeta();
+  const { data: chrome } = useChrome();
 
   const [editing, setEditingState] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -81,7 +87,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
     if (!user && editing) setEditingState(false);
   }, [user, editing]);
 
-  const bases: Partial<Record<PageId, any>> = { home, about };
+  const bases: Partial<Record<PageId, any>> = { home, about, skim, clientsMeta, chrome };
 
   const dirtyCount =
     Object.values(pageOv).reduce((n, m) => n + Object.keys(m).length, 0) +
@@ -218,11 +224,25 @@ export function EditableImage({
   const b = binding as Binding;
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  // Skeleton pulse until the image has actually painted (slow connections).
+  const [loaded, setLoaded] = useState(false);
   const override = getOverride(b, path);
   const shown = (override === undefined ? src : (override as string)) || "";
 
   const img = shown ? (
-    <img src={shown} alt={alt} className={className} style={style} />
+    <img
+      src={shown}
+      alt={alt}
+      className={`${className}${loaded ? "" : " img-skeleton"}`}
+      style={style}
+      loading="lazy"
+      onLoad={() => setLoaded(true)}
+      onError={() => setLoaded(true)}
+      ref={(el) => {
+        // Cached images can finish before hydration attaches onLoad.
+        if (el?.complete) setLoaded(true);
+      }}
+    />
   ) : (
     <span className={className} style={style} />
   );
@@ -284,7 +304,7 @@ export function EditableImage({
 /* ─────────────── Floating toolbar ─────────────── */
 
 // Routes with inline-editable content wired up.
-const INLINE_EDIT_ROUTES = ["/", "/about", "/ads", "/graphics", "/calendars", "/videos", "/socials", "/services", "/clients"];
+const INLINE_EDIT_ROUTES = ["/", "/about", "/ads", "/graphics", "/calendars", "/videos", "/socials", "/services", "/clients", "/skim", "/gallery"];
 const isEditableRoute = (pathname: string) => INLINE_EDIT_ROUTES.includes(pathname) || pathname.startsWith("/work/");
 
 export function EditToolbar() {

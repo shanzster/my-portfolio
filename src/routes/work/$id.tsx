@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { WORK_ITEMS, type WorkItem } from "@/lib/work-data";
-import { useWork } from "@/lib/content";
+import { useWork, useChrome } from "@/lib/content";
 import { EditableText, EditableImage } from "@/lib/edit-mode";
 import { NavBar } from "@/components/NavBar";
 import { TrafficLights } from "@/components/TrafficLights";
+import { cloudinaryPdfThumbnail } from "@/lib/cloudinary";
 
 export const Route = createFileRoute("/work/$id")({
   component: WorkDetail,
@@ -55,13 +56,19 @@ function ImgBox({
 /* ─── Graphic modal — full-page sheet rising from bottom ─── */
 function GraphicModal({
   graphic,
+  gi,
+  item,
   color,
   onClose,
 }: {
   graphic: { src?: string; title: string; description: string; process?: string[]; tools?: string[]; portrait?: boolean };
+  gi: number;
+  item: WorkItem;
   color: string;
   onClose: () => void;
 }) {
+  const { data: chrome } = useChrome();
+  const wd = chrome.workDetail;
   // Lock body scroll while open
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -129,10 +136,8 @@ function GraphicModal({
             />}
             {/* Title overlay */}
             <div className="absolute bottom-0 inset-x-0 px-10 pb-8">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/40 mb-1">Graphic</p>
-              <h2 className="text-[clamp(28px,4vw,48px)] font-bold tracking-tightest text-foreground leading-tight">
-                {graphic.title}
-              </h2>
+              <EditableText page="chrome" path={["workDetail", "graphicKicker"]} value={wd.graphicKicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/40 mb-1" />
+              <EditableText collection="work" id={item.id} item={item} path={["graphics", gi, "title"]} value={graphic.title} as="h2" className="text-[clamp(28px,4vw,48px)] font-bold tracking-tightest text-foreground leading-tight block" />
             </div>
           </div>
 
@@ -141,16 +146,14 @@ function GraphicModal({
 
             {/* Col 1: Description + tools */}
             <div className="px-8 py-8">
-              <p className="text-[9px] uppercase tracking-[0.22em] text-foreground/30 mb-4">About this graphic</p>
-              <p className="text-[14px] leading-relaxed tracking-tight text-foreground/65 mb-6">
-                {graphic.description}
-              </p>
+              <EditableText page="chrome" path={["workDetail", "aboutGraphicLabel"]} value={wd.aboutGraphicLabel} as="p" className="text-[9px] uppercase tracking-[0.22em] text-foreground/30 mb-4" />
+              <EditableText collection="work" id={item.id} item={item} path={["graphics", gi, "description"]} value={graphic.description} as="p" className="text-[14px] leading-relaxed tracking-tight text-foreground/65 mb-6" />
               {graphic.tools && graphic.tools.length > 0 && (
                 <div>
-                  <p className="text-[9px] uppercase tracking-[0.22em] text-foreground/30 mb-3">Made with</p>
+                  <EditableText page="chrome" path={["workDetail", "madeWithLabel"]} value={wd.madeWithLabel} as="p" className="text-[9px] uppercase tracking-[0.22em] text-foreground/30 mb-3" />
                   <div className="flex flex-wrap gap-2">
-                    {graphic.tools.map((t) => (
-                      <span key={t} className="rounded-full bg-secondary border border-border px-3 py-1 text-[11px] tracking-tight text-foreground/55">{t}</span>
+                    {graphic.tools.map((t, ti) => (
+                      <EditableText key={ti} collection="work" id={item.id} item={item} path={["graphics", gi, "tools", ti]} value={t} as="span" className="rounded-full bg-secondary border border-border px-3 py-1 text-[11px] tracking-tight text-foreground/55" />
                     ))}
                   </div>
                 </div>
@@ -159,7 +162,7 @@ function GraphicModal({
 
             {/* Col 2 + 3: Process */}
             <div className="lg:col-span-2 px-8 py-8">
-              <p className="text-[9px] uppercase tracking-[0.22em] text-foreground/30 mb-6">How I made it</p>
+              <EditableText page="chrome" path={["workDetail", "howLabel"]} value={wd.howLabel} as="p" className="text-[9px] uppercase tracking-[0.22em] text-foreground/30 mb-6" />
               {graphic.process && graphic.process.length > 0 ? (
                 <ol className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   {graphic.process.map((step, i) => (
@@ -170,7 +173,7 @@ function GraphicModal({
                       >
                         {i + 1}
                       </span>
-                      <span className="text-[13px] tracking-tight text-foreground/65 leading-relaxed">{step}</span>
+                      <EditableText collection="work" id={item.id} item={item} path={["graphics", gi, "process", i]} value={step} as="span" className="text-[13px] tracking-tight text-foreground/65 leading-relaxed" />
                     </li>
                   ))}
                 </ol>
@@ -192,6 +195,8 @@ function GraphicModal({
 
 /* ─── Slanted folder with graphics inside ─── */
 function GraphicsFolder({ item }: { item: WorkItem }) {
+  const { data: chrome } = useChrome();
+  const wd = chrome.workDetail;
   const [open, setOpen] = useState(false);
   const [tooltip, setTooltip] = useState<number | null>(null);
   const [modal, setModal] = useState<number | null>(null);
@@ -237,6 +242,8 @@ function GraphicsFolder({ item }: { item: WorkItem }) {
       {activeGraphic && (
         <GraphicModal
           graphic={activeGraphic ?? { title: `Graphic ${modal! + 1}`, description: "Add a description in work-data.ts.", process: [], tools: [] }}
+          gi={modal!}
+          item={item}
           color={item.color}
           onClose={() => setModal(null)}
         />
@@ -281,7 +288,7 @@ function GraphicsFolder({ item }: { item: WorkItem }) {
           className="absolute top-4 left-5 text-[10px] uppercase tracking-[0.18em] text-foreground/25 transition-opacity duration-300 z-20"
           style={{ opacity: open ? 0 : 1 }}
         >
-          hover to open
+          {wd.graphicsHint}
         </p>
 
         {/* ── Graphics — slide in from right on hover ── */}
@@ -329,7 +336,7 @@ function GraphicsFolder({ item }: { item: WorkItem }) {
                     style={{ background: "oklch(0.18 0.01 240 / 0.92)", backdropFilter: "blur(8px)", boxShadow: "0 4px 16px -4px oklch(0.2 0.02 240 / 0.3)" }}
                   >
                     <p className="text-[11px] font-semibold tracking-tight text-white">{graphic?.title ?? `Graphic ${i + 1}`}</p>
-                    <p className="text-[9px] tracking-tight text-white/50 mt-0.5">click to learn more</p>
+                    <p className="text-[9px] tracking-tight text-white/50 mt-0.5">{wd.graphicTooltipHint}</p>
                   </div>
                   <div className="flex justify-center">
                     <div className="w-2 h-2 rotate-45" style={{ background: "oklch(0.18 0.01 240 / 0.92)", marginTop: -4 }} />
@@ -359,7 +366,7 @@ function GraphicsFolder({ item }: { item: WorkItem }) {
           >
             <div className="absolute inset-x-8 top-5 h-px rounded-full" style={{ background: "oklch(1 0 0 / 0.22)" }} />
             <div className="absolute inset-x-12 top-8 h-px rounded-full" style={{ background: "oklch(1 0 0 / 0.10)" }} />
-            {!open && <p className="absolute bottom-5 right-6 text-[11px] tracking-[0.2em] uppercase text-white/35">graphics</p>}
+            {!open && <p className="absolute bottom-5 right-6 text-[11px] tracking-[0.2em] uppercase text-white/35">{wd.graphicsFolderLabel}</p>}
           </div>
         </div>
       </div>
@@ -396,6 +403,8 @@ function GraphicsFolder({ item }: { item: WorkItem }) {
 
 /* ─── Carousel section ─── */
 function CarouselSection({ item }: { item: WorkItem }) {
+  const { data: chrome } = useChrome();
+  const wd = chrome.workDetail;
   const slides = item.carouselSlides ?? [];
   const [current, setCurrent] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -426,14 +435,14 @@ function CarouselSection({ item }: { item: WorkItem }) {
       )}
 
       <div className="mb-10">
-        <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4">Carousel Post</p>
+        <EditableText page="chrome" path={["workDetail", "carouselKicker"]} value={wd.carouselKicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
         <div className="rounded-[14px] border border-border bg-card overflow-hidden mac-shadow">
           {/* macOS title bar */}
           <div className="flex h-9 items-center justify-between border-b border-border bg-secondary/60 px-4">
             <div className="flex items-center gap-1.5">
               <TrafficLights size={11} />
             </div>
-            <span className="text-[11px] tracking-tight text-foreground/50">carousel_post.instagram</span>
+            <EditableText page="chrome" path={["workDetail", "carouselWindow"]} value={wd.carouselWindow} as="span" className="text-[11px] tracking-tight text-foreground/50" />
             <span className="text-[10px] tracking-tight text-foreground/30">{current + 1} / {slides.length}</span>
           </div>
 
@@ -441,24 +450,15 @@ function CarouselSection({ item }: { item: WorkItem }) {
             {/* Left — context */}
             <div className="px-7 py-7 border-b lg:border-b-0 lg:border-r border-border flex flex-col justify-between">
               <div>
-                <h3 className="text-[18px] font-bold tracking-tightest text-foreground mb-3">
-                  How I build carousels.
-                </h3>
-                <p className="text-[13px] leading-relaxed tracking-tight text-foreground/55 mb-5">
-                  Carousels are one of the highest-engagement post formats on Facebook and Instagram. Each slide needs to earn the swipe — a hook on slide 1, value in the middle, and a clear CTA at the end.
-                </p>
+                <EditableText page="chrome" path={["workDetail", "carouselTitle"]} value={wd.carouselTitle} as="h3" className="text-[18px] font-bold tracking-tightest text-foreground mb-3 block" />
+                <EditableText page="chrome" path={["workDetail", "carouselBody"]} value={wd.carouselBody} as="p" className="text-[13px] leading-relaxed tracking-tight text-foreground/55 mb-5" />
                 <div className="space-y-2.5">
-                  {[
-                    { n: "01", t: "Hook slide", d: "Slide 1 stops the scroll — bold headline, strong visual" },
-                    { n: "02", t: "Value slides", d: "Middle slides deliver the content — tips, steps, or info" },
-                    { n: "03", t: "CTA slide", d: "Final slide drives action — follow, save, or contact" },
-                    { n: "04", t: "Brand consistency", d: "Every slide uses the same colors, fonts, and layout system" },
-                  ].map(({ n, t, d }) => (
-                    <div key={n} className="flex items-start gap-3">
-                      <span className="text-[10px] font-bold tracking-[0.12em] text-foreground/25 mt-0.5 shrink-0">{n}</span>
+                  {wd.carouselSteps.map(({ n, t, d }, si) => (
+                    <div key={si} className="flex items-start gap-3">
+                      <EditableText page="chrome" path={["workDetail", "carouselSteps", si, "n"]} value={n} as="span" className="text-[10px] font-bold tracking-[0.12em] text-foreground/25 mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-[12px] font-semibold tracking-tight text-foreground/80">{t}</p>
-                        <p className="text-[11px] tracking-tight text-foreground/45">{d}</p>
+                        <EditableText page="chrome" path={["workDetail", "carouselSteps", si, "t"]} value={t} as="p" className="text-[12px] font-semibold tracking-tight text-foreground/80" />
+                        <EditableText page="chrome" path={["workDetail", "carouselSteps", si, "d"]} value={d} as="p" className="text-[11px] tracking-tight text-foreground/45" />
                       </div>
                     </div>
                   ))}
@@ -498,7 +498,7 @@ function CarouselSection({ item }: { item: WorkItem }) {
                 <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
                   <div />
                   <p className="text-[9px] uppercase tracking-[0.14em] text-white/50 bg-black/20 rounded-full px-2 py-0.5 backdrop-blur-sm">
-                    click to enlarge
+                    {wd.enlargeHint}
                   </p>
                 </div>
               </div>
@@ -509,13 +509,13 @@ function CarouselSection({ item }: { item: WorkItem }) {
                   onClick={prev}
                   className="flex-1 rounded-[8px] border border-border bg-secondary/50 py-2 text-[12px] tracking-tight text-foreground/60 hover:bg-secondary transition"
                 >
-                  ← Prev
+                  {wd.prevButton}
                 </button>
                 <button
                   onClick={next}
                   className="flex-1 rounded-[8px] border border-border bg-secondary/50 py-2 text-[12px] tracking-tight text-foreground/60 hover:bg-secondary transition"
                 >
-                  Next →
+                  {wd.nextButton}
                 </button>
               </div>
 
@@ -548,6 +548,8 @@ function CarouselSection({ item }: { item: WorkItem }) {
 function WorkDetail() {
   const { id, seed } = Route.useLoaderData();
   const { items, loading } = useWork();
+  const { data: chrome } = useChrome();
+  const wd = chrome.workDetail;
   // Prefer the live (CMS) version; fall back to the seed while it loads.
   const item: WorkItem | null = items.find((w) => w.id === id) ?? seed;
 
@@ -560,13 +562,13 @@ function WorkDetail() {
             <p className="text-[13px] tracking-tight text-foreground/40">Loading…</p>
           ) : (
             <>
-              <h1 className="text-xl font-semibold tracking-tight text-foreground">Project not found</h1>
-              <p className="mt-2 text-[13px] text-foreground/50">This case study doesn't exist or was removed.</p>
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">{wd.notFoundTitle}</h1>
+              <p className="mt-2 text-[13px] text-foreground/50">{wd.notFoundBody}</p>
               <Link
                 to="/"
                 className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                Go home
+                {wd.goHome}
               </Link>
             </>
           )}
@@ -594,7 +596,7 @@ function WorkDetail() {
           hash="work"
           className="inline-flex items-center gap-2 text-[12px] tracking-tight text-foreground/40 hover:text-foreground transition mb-8"
         >
-          ← Back to work
+          <EditableText page="chrome" path={["workDetail", "back"]} value={wd.back} />
         </Link>
 
         {/* ── 1. Header ── */}
@@ -612,9 +614,9 @@ function WorkDetail() {
               style={{ fontSize: "clamp(44px, 6vw, 88px)" }}
             />
             <div className="mt-3 flex flex-wrap gap-2">
-              <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] tracking-tight text-foreground/50">{item.tag}</span>
-              {item.platform && <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] tracking-tight text-foreground/50">{item.platform}</span>}
-              {item.duration && <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] tracking-tight text-foreground/50">{item.duration}</span>}
+              <EditableText collection="work" id={item.id} item={item} path={["tag"]} value={item.tag} as="span" className="rounded-full border border-border bg-card px-3 py-1 text-[11px] tracking-tight text-foreground/50" />
+              {item.platform && <EditableText collection="work" id={item.id} item={item} path={["platform"]} value={item.platform} as="span" className="rounded-full border border-border bg-card px-3 py-1 text-[11px] tracking-tight text-foreground/50" />}
+              {item.duration && <EditableText collection="work" id={item.id} item={item} path={["duration"]} value={item.duration} as="span" className="rounded-full border border-border bg-card px-3 py-1 text-[11px] tracking-tight text-foreground/50" />}
             </div>
           </div>
           {/* Logo */}
@@ -622,19 +624,19 @@ function WorkDetail() {
             className="rounded-[16px] border border-border overflow-hidden shrink-0 flex items-center justify-center"
             style={{ width: 80, height: 80, background: item.color }}
           >
-            <EditableImage collection="work" id={item.id} item={item} path={["logo"]} src={item.logo ?? ""} alt={`${item.client} logo`} wrapperClassName="flex items-center justify-center w-full h-full" className="w-full h-full object-contain p-2" />
+            <EditableImage collection="work" id={item.id} item={item} path={["logo"]} src={item.logo ?? ""} alt={`${item.client} logo`} wrapperClassName="block w-full h-full" className="w-full h-full object-cover" />
           </div>
         </div>
 
         {/* ── 2. Before & After ── */}
         <div className="mb-10">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4">Before & After</p>
+          <EditableText page="chrome" path={["workDetail", "beforeAfterKicker"]} value={wd.beforeAfterKicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
           <div className="grid grid-cols-2 gap-3">
             {/* Before — image if exists, else story text */}
             <div className="rounded-[14px] border border-border overflow-hidden mac-shadow">
               <div className="flex h-8 items-center gap-1.5 border-b border-border bg-secondary/60 px-3">
                 <TrafficLights size={9} />
-                <span className="ml-2 text-[10px] tracking-tight text-foreground/40">before.jpeg</span>
+                <span className="ml-2 text-[10px] tracking-tight text-foreground/40">{wd.beforeFile}</span>
               </div>
               {item.beforeImg ? (
                 <ImgBox
@@ -648,15 +650,19 @@ function WorkDetail() {
                   className="flex flex-col justify-center gap-4 px-6 py-7"
                   style={{ minHeight: 280, background: `${item.color}14` }}
                 >
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/30">The starting point</p>
+                  <EditableText page="chrome" path={["workDetail", "beforeKicker"]} value={wd.beforeKicker} as="p" className="text-[10px] uppercase tracking-[0.2em] text-foreground/30" />
                   {(item.beforePoints ?? [
                     { icon: "💬", text: `A client DM'd me wanting to start a business from the ground up.` },
                     { icon: "📭", text: "No brand. No logo. No social media. No budget. Just an idea and a phone." },
                     { icon: "🔧", text: "My job: build everything from scratch and make it look like it's been around." },
-                  ]).map(({ icon, text }: { icon: string; text: string }) => (
-                    <div key={text} className="flex items-start gap-3">
+                  ]).map(({ icon, text }: { icon: string; text: string }, bpi: number) => (
+                    <div key={bpi} className="flex items-start gap-3">
                       <span className="text-[16px] shrink-0">{icon}</span>
-                      <p className="text-[12px] sm:text-[13px] leading-relaxed tracking-tight text-foreground/65">{text}</p>
+                      {item.beforePoints ? (
+                        <EditableText collection="work" id={item.id} item={item} path={["beforePoints", bpi, "text"]} value={text} as="p" className="text-[12px] sm:text-[13px] leading-relaxed tracking-tight text-foreground/65" />
+                      ) : (
+                        <p className="text-[12px] sm:text-[13px] leading-relaxed tracking-tight text-foreground/65">{text}</p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -666,7 +672,7 @@ function WorkDetail() {
             <div className="rounded-[14px] border border-border overflow-hidden mac-shadow flex flex-col">
               <div className="flex h-8 items-center gap-1.5 border-b border-border bg-secondary/60 px-3">
                 <TrafficLights size={9} />
-                <span className="ml-2 text-[10px] tracking-tight text-foreground/40">after.md</span>
+                <span className="ml-2 text-[10px] tracking-tight text-foreground/40">{wd.afterFile}</span>
               </div>
               <div
                 className="flex flex-1 flex-col justify-center gap-5 px-5 py-6"
@@ -676,10 +682,14 @@ function WorkDetail() {
                   { icon: "◈", text: "Built a comprehensive brand personality — voice, tone, visual identity, and content system from scratch." },
                   { icon: "↑", text: "Generated consistent revenue growth through strategic content and community engagement." },
                   { icon: "✦", text: "Sourced and secured a B2B collaboration — found the client, pitched the idea, and handled all the paperwork." },
-                ]).map(({ icon, text }: { icon: string; text: string }) => (
-                  <div key={text} className="flex items-start gap-3">
+                ]).map(({ icon, text }: { icon: string; text: string }, api: number) => (
+                  <div key={api} className="flex items-start gap-3">
                     <span className="mt-0.5 shrink-0 text-[14px]" style={{ color: `oklch(from ${item.color} calc(l + 0.3) c h)` }}>{icon}</span>
-                    <p className="text-[12px] sm:text-[13px] leading-relaxed tracking-tight text-foreground/70">{text}</p>
+                    {item.afterPoints ? (
+                      <EditableText collection="work" id={item.id} item={item} path={["afterPoints", api, "text"]} value={text} as="p" className="text-[12px] sm:text-[13px] leading-relaxed tracking-tight text-foreground/70" />
+                    ) : (
+                      <p className="text-[12px] sm:text-[13px] leading-relaxed tracking-tight text-foreground/70">{text}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -689,7 +699,7 @@ function WorkDetail() {
 
       {/* ── 3. Graphics folder ── */}
         <div className="mb-10">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-6">Graphics I Designed</p>
+          <EditableText page="chrome" path={["workDetail", "graphicsKicker"]} value={wd.graphicsKicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-6" />
           <GraphicsFolder item={item} />
         </div>
 
@@ -701,7 +711,7 @@ function WorkDetail() {
         {/* ── 3c. Live Website (if applicable) ── */}
         {item.websiteUrl && (
           <div className="mb-10">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4">Live Website</p>
+            <EditableText page="chrome" path={["workDetail", "websiteKicker"]} value={wd.websiteKicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
             <div className="rounded-[14px] border border-border bg-card overflow-hidden mac-shadow">
               <div className="flex h-9 items-center justify-between border-b border-border bg-secondary/60 px-4">
                 <div className="flex items-center gap-1.5">
@@ -714,16 +724,30 @@ function WorkDetail() {
                   rel="noopener noreferrer"
                   className="text-[10px] tracking-tight text-foreground/35 hover:text-foreground transition"
                 >
-                  open ↗
+                  {wd.openLink}
                 </a>
               </div>
-              <iframe
-                src={item.websiteUrl}
-                className="w-full border-0"
-                style={{ height: 520 }}
-                title="Live Website"
-                loading="lazy"
-              />
+              {/* Screenshot thumbnail — avoids iframe CSP blocks */}
+              <a
+                href={item.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block relative group"
+              >
+                <img
+                  src={`https://api.microlink.io/?url=${encodeURIComponent(item.websiteUrl)}&screenshot=true&meta=false&embed=screenshot.url`}
+                  alt={`${item.title} website preview`}
+                  className="w-full object-cover object-top"
+                  style={{ height: 520 }}
+                  loading="lazy"
+                />
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 text-white text-[12px] tracking-wide px-4 py-2 rounded-full">
+                    Visit site ↗
+                  </span>
+                </div>
+              </a>
             </div>
           </div>
         )}
@@ -731,30 +755,56 @@ function WorkDetail() {
         {/* ── 3d. PDF Documents (if applicable) ── */}
         {item.pdfDocs && item.pdfDocs.length > 0 && (
           <div className="mb-10">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4">Documents & Reports</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {item.pdfDocs.map((doc) => (
-                <div key={doc.url} className="rounded-[14px] border border-border bg-card overflow-hidden mac-shadow flex flex-col">
+            <EditableText page="chrome" path={["workDetail", "documentsKicker"]} value={wd.documentsKicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {item.pdfDocs.map((doc, di) => (
+                <div key={di} className="rounded-[14px] border border-border bg-card overflow-hidden mac-shadow flex flex-col">
+                  {/* Title bar */}
                   <div className="flex h-9 items-center justify-between border-b border-border bg-secondary/60 px-4 shrink-0">
                     <div className="flex items-center gap-1.5">
                       <TrafficLights size={11} />
                     </div>
-                    <span className="text-[11px] tracking-tight text-foreground/50 truncate mx-3">{doc.title}</span>
-                    <a
-                      href={doc.url}
-                      download
-                      className="text-[10px] tracking-tight text-foreground/35 hover:text-foreground transition shrink-0"
-                    >
-                      ↓
-                    </a>
+                    <EditableText collection="work" id={item.id} item={item} path={["pdfDocs", di, "title"]} value={doc.title} as="span" className="text-[11px] tracking-tight text-foreground/50 truncate mx-3" />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] tracking-tight text-foreground/35 hover:text-foreground transition"
+                        title="Open PDF"
+                      >
+                        ↗
+                      </a>
+                      <a
+                        href={doc.url}
+                        download
+                        className="text-[10px] tracking-tight text-foreground/35 hover:text-foreground transition"
+                        title="Download PDF"
+                      >
+                        ↓
+                      </a>
+                    </div>
                   </div>
-                  <iframe
-                    src={doc.url}
-                    className="w-full border-0 flex-1"
-                    style={{ height: 340 }}
-                    title={doc.title}
-                    loading="lazy"
-                  />
+                  {/* Cloudinary page-1 thumbnail — clicking opens the full PDF */}
+                  <a
+                    href={doc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block relative group flex-1"
+                  >
+                    <img
+                      src={cloudinaryPdfThumbnail(doc.url)}
+                      alt={doc.title}
+                      className="w-full object-cover object-top"
+                      style={{ height: 420 }}
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 text-white text-[12px] tracking-wide px-4 py-2 rounded-full">
+                        View PDF ↗
+                      </span>
+                    </div>
+                  </a>
                 </div>
               ))}
             </div>
@@ -764,13 +814,13 @@ function WorkDetail() {
       {/* ── 3f. Printing Guidelines Flipbook (if applicable) ── */}
         {item.flipbookUrl && (
           <div className="mb-10">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4">Printing Guidelines</p>
+            <EditableText page="chrome" path={["workDetail", "printingKicker"]} value={wd.printingKicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
             <div className="rounded-[14px] border border-border bg-card overflow-hidden mac-shadow">
               <div className="flex h-9 items-center justify-between border-b border-border bg-secondary/60 px-4">
                 <div className="flex items-center gap-1.5">
                   <TrafficLights size={11} />
                 </div>
-                <span className="text-[11px] tracking-tight text-foreground/50">PrintingGuidelines.pdf</span>
+                <EditableText page="chrome" path={["workDetail", "printingFile"]} value={wd.printingFile} as="span" className="text-[11px] tracking-tight text-foreground/50" />
                 <div className="w-10" />
               </div>
               <div style={{ height: 480 }}>
@@ -789,32 +839,31 @@ function WorkDetail() {
         )}
 
         {/* ── 3c. Content Calendar ── */}
+        {item.calendarImg && (
         <div className="mb-10">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4">Content Calendar</p>
+          <EditableText page="chrome" path={["workDetail", "calendarKicker"]} value={wd.calendarKicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
           <div className="rounded-[14px] border border-border bg-card overflow-hidden mac-shadow">
             <div className="flex h-9 items-center justify-between border-b border-border bg-secondary/60 px-4">
               <div className="flex items-center gap-1.5">
                 <TrafficLights size={11} />
               </div>
-              <span className="text-[11px] tracking-tight text-foreground/50">content_calendar.notion</span>
+              <EditableText page="chrome" path={["workDetail", "calendarWindow"]} value={wd.calendarWindow} as="span" className="text-[11px] tracking-tight text-foreground/50" />
               <div className="w-10" />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
               {/* Left — context */}
               <div className="p-7 border-b lg:border-b-0 lg:border-r border-border flex flex-col justify-between">
                 <div>
-                  <h3 className="text-[18px] font-bold tracking-tightest text-foreground mb-3">
-                    The system behind the content.
-                  </h3>
+                  <EditableText page="chrome" path={["workDetail", "calendarTitle"]} value={wd.calendarTitle} as="h3" className="text-[18px] font-bold tracking-tightest text-foreground mb-3 block" />
                   <p className="text-[13px] leading-relaxed tracking-tight text-foreground/55">
-                    Every post on {item.client} was planned. This is the content calendar I built — mapping out posts by content pillar, format, and date so nothing was ever random.
+                    {wd.calendarBody.replace("{client}", item.client)}
                   </p>
                 </div>
                 <div className="mt-6 space-y-2">
-                  {["Content pillars defined", "Posts planned 2–4 weeks ahead", "Format variety (posts, stories, reels)", "Aligned with key dates & trends"].map((point) => (
-                    <div key={point} className="flex items-center gap-2.5 text-[12px] tracking-tight text-foreground/60">
+                  {wd.calendarPoints.map((point, pi) => (
+                    <div key={pi} className="flex items-center gap-2.5 text-[12px] tracking-tight text-foreground/60">
                       <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: "oklch(0.62 0.18 255)" }} />
-                      {point}
+                      <EditableText page="chrome" path={["workDetail", "calendarPoints", pi]} value={point} />
                     </div>
                   ))}
                 </div>
@@ -828,41 +877,34 @@ function WorkDetail() {
                   style={{ height: 280, borderRadius: 10 }}
                 />
                 <p className="mt-2 text-[10px] tracking-tight text-foreground/30 text-center">
-                  {item.calendarImg ? "Content calendar" : "Add your Notion/calendar screenshot here"}
+                  {item.calendarImg ? wd.calendarCaption : wd.calendarAddCaption}
                 </p>
               </div>
             </div>
           </div>
         </div>
+        )}
 
         {/* ── 4. Analytics & Results ── */}
+        {(item.analyticsImg || (item.analytics && item.analytics.length > 0)) && (
         <div className="mb-10">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4">Analytics & Results</p>
+          <EditableText page="chrome" path={["workDetail", "analyticsKicker"]} value={wd.analyticsKicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
           <div className="rounded-[14px] border border-border bg-card overflow-hidden mac-shadow">
             <div className="flex h-9 items-center justify-between border-b border-border bg-secondary/60 px-4">
               <div className="flex items-center gap-1.5">
                 <TrafficLights size={11} />
               </div>
-              <span className="text-[11px] tracking-tight text-foreground/50">analytics.csv</span>
+              <EditableText page="chrome" path={["workDetail", "analyticsWindow"]} value={wd.analyticsWindow} as="span" className="text-[11px] tracking-tight text-foreground/50" />
               <div className="w-10" />
             </div>
             <div className="p-6">
               {/* Metrics */}
-              {item.analytics && item.analytics.length > 0 ? (
+              {item.analytics && item.analytics.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                  {item.analytics.map((a) => (
-                    <div key={a.label} className="rounded-[10px] border border-border bg-secondary/40 p-4">
-                      <p className="text-[28px] font-bold tracking-tightest leading-none text-foreground">{a.value}</p>
-                      <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-foreground/40">{a.label}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                  {["Reach", "Engagement", "Followers", "Posts"].map((l) => (
-                    <div key={l} className="rounded-[10px] border border-border bg-secondary/40 p-4">
-                      <p className="text-[28px] font-bold tracking-tightest leading-none text-foreground/20">—</p>
-                      <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-foreground/30">{l}</p>
+                  {item.analytics.map((a, ai) => (
+                    <div key={ai} className="rounded-[10px] border border-border bg-secondary/40 p-4">
+                      <EditableText collection="work" id={item.id} item={item} path={["analytics", ai, "value"]} value={a.value} as="p" className="text-[28px] font-bold tracking-tightest leading-none text-foreground" />
+                      <EditableText collection="work" id={item.id} item={item} path={["analytics", ai, "label"]} value={a.label} as="p" className="mt-1 text-[10px] uppercase tracking-[0.14em] text-foreground/40" />
                     </div>
                   ))}
                 </div>
@@ -879,49 +921,58 @@ function WorkDetail() {
                 className="mt-4 rounded-[10px] p-4"
                 style={{ background: `${item.color}18` }}
               >
-                <p className="text-[10px] uppercase tracking-[0.18em] text-foreground/35 mb-1">Result</p>
+                <EditableText page="chrome" path={["workDetail", "resultLabel"]} value={wd.resultLabel} as="p" className="text-[10px] uppercase tracking-[0.18em] text-foreground/35 mb-1" />
                 <EditableText collection="work" id={item.id} item={item} path={["result"]} value={item.result} as="p" className="text-[15px] font-semibold tracking-tightest text-foreground" />
               </div>
             </div>
           </div>
         </div>
+        )}
 
         {/* ── 5. Reels (if applicable) ── */}
-        {(item.reels && item.reels.length > 0) || true ? (
+        {item.reels && item.reels.length > 0 && (
           <div className="mb-10">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4">Reels & Video</p>
+            <EditableText page="chrome" path={["workDetail", "reelsKicker"]} value={wd.reelsKicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {(item.reels ?? [null, null, null]).map((reel, i) => (
-                <div
-                  key={i}
-                  className="rounded-[14px] border border-border overflow-hidden mac-shadow"
-                  style={{ aspectRatio: "9/16" }}
-                >
-                  <div className="flex h-8 items-center gap-1.5 border-b border-border bg-secondary/60 px-3">
-                    <TrafficLights size={9} />
-                    <span className="ml-2 text-[9px] tracking-tight text-foreground/40">reel_{i + 1}.mp4</span>
+              {item.reels.map((reel, i) => {
+                // Extract filename from URL (e.g. "reel_oak_1.mp4" from a Cloudinary URL)
+                const filename = reel.split("/").pop()?.split("?")[0] ?? `reel_${i + 1}.mp4`;
+                return (
+                  <div
+                    key={i}
+                    className="rounded-[14px] border border-border overflow-hidden mac-shadow"
+                    style={{ aspectRatio: "9/16" }}
+                  >
+                    <div className="flex h-8 items-center gap-1.5 border-b border-border bg-secondary/60 px-3">
+                      <TrafficLights size={9} />
+                      <span className="ml-2 text-[9px] tracking-tight text-foreground/40 truncate">{filename}</span>
+                    </div>
+                    <video
+                      src={reel}
+                      className="w-full bg-black"
+                      style={{ height: "calc(100% - 32px)", objectFit: "cover", display: "block" }}
+                      muted
+                      loop
+                      playsInline
+                      controls
+                      preload="metadata"
+                    />
                   </div>
-                  <ImgBox
-                    src={reel ?? undefined}
-                    color={item.color}
-                    label={`reel ${i + 1}`}
-                    style={{ height: "calc(100% - 32px)" }}
-                  />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
-        ) : null}
+        )}
 
         {/* ── 6. Gallery ── */}
         <div className="mb-10">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4">Everything I Made</p>
+          <EditableText page="chrome" path={["workDetail", "galleryKicker"]} value={wd.galleryKicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
           <div className="rounded-[14px] border border-border bg-card overflow-hidden mac-shadow">
             <div className="flex h-9 items-center justify-between border-b border-border bg-secondary/60 px-4">
               <div className="flex items-center gap-1.5">
                 <TrafficLights size={11} />
               </div>
-              <span className="text-[11px] tracking-tight text-foreground/50">gallery.finder</span>
+              <EditableText page="chrome" path={["workDetail", "galleryWindow"]} value={wd.galleryWindow} as="span" className="text-[11px] tracking-tight text-foreground/50" />
               <span className="text-[10px] tracking-tight text-foreground/30">{galleryPlaceholders.length} items</span>
             </div>
             <div className="py-4 space-y-3 overflow-hidden">
@@ -962,8 +1013,8 @@ function WorkDetail() {
         {/* ── Footer ── */}
         <div className="border-t border-border pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex flex-wrap gap-1.5">
-            {item.tools.map((t) => (
-              <span key={t} className="rounded-full bg-secondary border border-border px-2.5 py-0.5 text-[10px] tracking-tight text-foreground/45">{t}</span>
+            {item.tools.map((t, ti) => (
+              <EditableText key={ti} collection="work" id={item.id} item={item} path={["tools", ti]} value={t} as="span" className="rounded-full bg-secondary border border-border px-2.5 py-0.5 text-[10px] tracking-tight text-foreground/45" />
             ))}
           </div>
           <div className="flex items-center gap-3">
@@ -971,14 +1022,14 @@ function WorkDetail() {
               href="/#contact"
               className="rounded-full bg-foreground px-5 py-2 text-[12px] tracking-tight text-background transition hover:opacity-85"
             >
-              Work with me →
+              <EditableText page="chrome" path={["workDetail", "workWithMe"]} value={wd.workWithMe} />
             </a>
             <Link
               to="/"
               hash="work"
               className="rounded-full border border-border bg-card px-5 py-2 text-[12px] tracking-tight text-foreground/60 hover:bg-secondary transition"
             >
-              ← All work
+              <EditableText page="chrome" path={["workDetail", "allWork"]} value={wd.allWork} />
             </Link>
           </div>
         </div>

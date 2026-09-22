@@ -4,11 +4,15 @@ import { useNavigate } from "@tanstack/react-router";
 import { type WorkItem } from "@/lib/work-data";
 import { useIsClient } from "@/hooks/useIsClient";
 import { TrafficLights } from "@/components/TrafficLights";
+import { useHome } from "@/lib/content";
+import { EditableText } from "@/lib/edit-mode";
 
-const LOCKED_IDS = ["snappy-nomad"];
+const LOCKED_IDS: string[] = [];
 
 /* ─── Coming Soon Modal ─── */
 function ComingSoonModal({ title, onClose }: { title: string; onClose: () => void }) {
+  const { data: home } = useHome();
+  const wf = home.workFolder;
   return createPortal(
     <div
       className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
@@ -35,21 +39,19 @@ function ComingSoonModal({ title, onClose }: { title: string; onClose: () => voi
           >
             <span className="text-[30px]">🏗️</span>
           </div>
-          <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-2">Coming Soon</p>
-          <h3 className="text-[20px] font-bold tracking-tightest text-foreground leading-tight mb-3">
-            Brand is being built<br />right now.
-          </h3>
+          <EditableText page="home" path={["workFolder", "comingSoonKicker"]} value={wf.comingSoonKicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-2" />
+          <EditableText page="home" path={["workFolder", "comingSoonTitle"]} value={wf.comingSoonTitle} as="h3" className="text-[20px] font-bold tracking-tightest text-foreground leading-tight mb-3" />
           <p className="text-[13px] leading-relaxed tracking-tight text-foreground/55 mb-6">
-            Come back later to see it — or get updates on{" "}
+            <EditableText page="home" path={["workFolder", "comingSoonBody"]} value={wf.comingSoonBody} />{" "}
             <a
               href="https://instagram.com/shanzster.zip"
               target="_blank"
               rel="noopener noreferrer"
               className="font-semibold text-foreground/80 underline underline-offset-2 hover:text-foreground transition"
             >
-              @shanzster.zip
+              <EditableText page="home" path={["workFolder", "comingSoonHandle"]} value={wf.comingSoonHandle} />
             </a>{" "}
-            on Instagram.
+            <EditableText page="home" path={["workFolder", "comingSoonBodyEnd"]} value={wf.comingSoonBodyEnd} />
           </p>
           <div className="flex flex-col gap-2.5">
             <a
@@ -58,13 +60,13 @@ function ComingSoonModal({ title, onClose }: { title: string; onClose: () => voi
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 rounded-full bg-foreground px-6 py-2.5 text-[12px] tracking-tight text-background transition hover:opacity-85"
             >
-              Follow @shanzster.zip ↗
+              <EditableText page="home" path={["workFolder", "comingSoonFollow"]} value={wf.comingSoonFollow} />
             </a>
             <button
               onClick={onClose}
               className="rounded-full border border-border px-6 py-2.5 text-[12px] tracking-tight text-foreground/50 transition hover:bg-secondary"
             >
-              Got it
+              <EditableText page="home" path={["workFolder", "comingSoonGotIt"]} value={wf.comingSoonGotIt} />
             </button>
           </div>
         </div>
@@ -74,20 +76,24 @@ function ComingSoonModal({ title, onClose }: { title: string; onClose: () => voi
   );
 }
 
-// 4 left, 4 right — neat columns flanking the folder (supports up to 8 cards)
-// x: distance from center, y: vertical offset from center
-const POSITIONS: { x: number; y: number; rot: number; side: "left" | "right" }[] = [
-  // Left column — top to bottom
-  { x: -380, y: -240, rot: -5,  side: "left"  },
-  { x: -380, y:  -80, rot: -3,  side: "left"  },
-  { x: -380, y:   80, rot: -6,  side: "left"  },
-  { x: -380, y:  240, rot: -4,  side: "left"  },
-  // Right column — top to bottom
-  { x:  380, y: -240, rot:  5,  side: "right" },
-  { x:  380, y:  -80, rot:  3,  side: "right" },
-  { x:  380, y:   80, rot:  6,  side: "right" },
-  { x:  380, y:  240, rot:  4,  side: "right" },
-];
+// Cards flank the folder in two columns, assigned alternately (1st left,
+// 2nd right, 3rd left, …) so any number of projects stays balanced. Each
+// column spreads its cards evenly between y −240 and 240.
+type FanPos = { x: number; y: number; rot: number; side: "left" | "right" };
+
+function fanPositions(count: number): FanPos[] {
+  const leftRows = Math.ceil(count / 2);
+  const rightRows = Math.floor(count / 2);
+  const rowY = (row: number, rows: number) => (rows <= 1 ? 0 : -240 + (480 * row) / (rows - 1));
+  const rots = [5, 3, 6, 4, 2];
+  return Array.from({ length: count }, (_, i) => {
+    const side: "left" | "right" = i % 2 === 0 ? "left" : "right";
+    const row = Math.floor(i / 2);
+    const rows = side === "left" ? leftRows : rightRows;
+    const rot = rots[row % rots.length] * (side === "left" ? -1 : 1);
+    return { x: side === "left" ? -380 : 380, y: rowY(row, rows), rot, side };
+  });
+}
 
 /* ─── Paper card ─── */
 function WorkPaper({
@@ -101,6 +107,8 @@ function WorkPaper({
   onCancelClose,
   onScheduleClose,
   isMobile,
+  openBadge,
+  pos,
 }: {
   item: WorkItem;
   index: number;
@@ -112,10 +120,11 @@ function WorkPaper({
   onCancelClose: () => void;
   onScheduleClose: () => void;
   isMobile: boolean;
+  openBadge: string;
+  pos: FanPos;
 }) {
   const navigate = useNavigate();
   const isHovered = hoveredIndex === index;
-  const pos = POSITIONS[index];
 
   const scaleX = isMobile ? 0.3 : 1;
   const scaleY = isMobile ? 0.3 : 1;
@@ -175,7 +184,7 @@ function WorkPaper({
           }
           {isHovered && (
             <div className="absolute top-2.5 right-2.5 rounded-full bg-black/25 px-2 py-0.5">
-              <p className="text-[9px] tracking-tight text-white/80 font-medium">open →</p>
+              <p className="text-[9px] tracking-tight text-white/80 font-medium">{openBadge}</p>
             </div>
           )}
         </div>
@@ -204,6 +213,8 @@ function MobileWorkPreviewModal({
   onClose: () => void;
   onCheckout: () => void;
 }) {
+  const { data: home } = useHome();
+  const wf = home.workFolder;
   return createPortal(
     <div
       className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 p-3"
@@ -230,7 +241,7 @@ function MobileWorkPreviewModal({
               {item.logo && (
                 <img src={item.logo} alt={item.client} className="absolute inset-0 w-full h-full object-cover opacity-40 -z-10" />
               )}
-              <p className="text-[9px] uppercase tracking-[0.18em] text-white/55">Selected work</p>
+              <EditableText page="home" path={["workFolder", "selectedWorkKicker"]} value={wf.selectedWorkKicker} as="p" className="text-[9px] uppercase tracking-[0.18em] text-white/55" />
               <h3 className="mt-1 text-[18px] font-bold leading-tight tracking-tightest text-white">
                 {item.title}
               </h3>
@@ -244,13 +255,13 @@ function MobileWorkPreviewModal({
           <div className="mt-3 flex items-start justify-between gap-3">
             <div>
               <p className="text-[11px] font-semibold tracking-tight text-foreground">{item.client}</p>
-              <p className="mt-0.5 text-[10px] tracking-tight text-foreground/45">Tap checkout to open the full page</p>
+              <EditableText page="home" path={["workFolder", "checkoutHint"]} value={wf.checkoutHint} as="p" className="mt-0.5 text-[10px] tracking-tight text-foreground/45" />
             </div>
             <button
               onClick={onCheckout}
               className="shrink-0 rounded-full bg-foreground px-4 py-2 text-[11px] tracking-tight text-background transition hover:opacity-85"
             >
-              Check out →
+              <EditableText page="home" path={["workFolder", "checkoutButton"]} value={wf.checkoutButton} />
             </button>
           </div>
         </div>
@@ -325,6 +336,8 @@ function BigFolder({ open, isMobile }: { open: boolean; isMobile?: boolean }) {
 
 /* ─── Main export ─── */
 export function WorkFolderScene({ items }: { items: WorkItem[] }) {
+  const { data: home } = useHome();
+  const wf = home.workFolder;
   const [open, setOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isCompactDevice, setIsCompactDevice] = useState(false);
@@ -404,8 +417,9 @@ export function WorkFolderScene({ items }: { items: WorkItem[] }) {
     };
   }, []);
 
-  // Show up to 8 items (4 left, 4 right)
-  const visible = items.slice(0, 8);
+  // Every non-hidden project gets a card, fanned alternately left/right.
+  const visible = items.filter((w) => !w.hidden);
+  const positions = fanPositions(visible.length);
 
   // Before client hydration, treat as desktop to match SSR output exactly
   const isMobile = isClient && isCompactDevice;
@@ -451,6 +465,8 @@ export function WorkFolderScene({ items }: { items: WorkItem[] }) {
               setHoveredIndex(null);
             }}
             isMobile={isMobile}
+            openBadge={wf.openBadge}
+            pos={positions[i]}
           />
         ))}
 
@@ -479,9 +495,11 @@ export function WorkFolderScene({ items }: { items: WorkItem[] }) {
         </div>
       </div>
 
-      <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-foreground/25">
-        {isMobile ? "tap to open · tap a card to view" : "hover to open · click a card to view"}
-      </p>
+      {isMobile ? (
+        <EditableText page="home" path={["workFolder", "hintMobile"]} value={wf.hintMobile} as="p" className="mt-2 text-[10px] uppercase tracking-[0.2em] text-foreground/25" />
+      ) : (
+        <EditableText page="home" path={["workFolder", "hintDesktop"]} value={wf.hintDesktop} as="p" className="mt-2 text-[10px] uppercase tracking-[0.2em] text-foreground/25" />
+      )}
     </div>
   );
 }

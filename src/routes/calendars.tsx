@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { NavBar } from "@/components/NavBar";
 import { type Media as Calendar } from "@/lib/media-data";
-import { useCalendars } from "@/lib/content";
+import { useCalendars, useChrome } from "@/lib/content";
 import { EditableText, EditableImage, useEdit } from "@/lib/edit-mode";
 
 export const Route = createFileRoute("/calendars")({
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/calendars")({
 /* ─── CALENDAR CARD ─── */
 function CalendarCard({ calendar, onClick }: { calendar: Calendar; onClick: () => void }) {
   const { editing } = useEdit();
+  const { data: chrome } = useChrome();
   return (
     <button
       onClick={() => { if (!editing) onClick(); }}
@@ -34,7 +35,7 @@ function CalendarCard({ calendar, onClick }: { calendar: Calendar; onClick: () =
           <div className="w-full h-full flex flex-col items-center justify-center gap-2">
             <span className="text-white/10 text-[32px]">◈</span>
             <p className="text-white/12 text-[10px] tracking-[0.14em] uppercase">
-              Add Calendar
+              {chrome.calendars.addLabel}
             </p>
           </div>
         )}
@@ -48,7 +49,7 @@ function CalendarCard({ calendar, onClick }: { calendar: Calendar; onClick: () =
         <div className="absolute inset-0 bg-background/0 group-hover:bg-background/10 transition-colors duration-300 flex items-center justify-center">
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <div className="px-4 py-2 rounded-full bg-background/90 backdrop-blur-sm border border-border text-[11px] tracking-tight text-foreground">
-              View Full Size
+              {chrome.calendars.viewFullSize}
             </div>
           </div>
         </div>
@@ -174,6 +175,8 @@ function FullViewModal({
 /* ─── PAGE ─── */
 function CalendarsPage() {
   const { items: CALENDARS } = useCalendars();
+  const { data: chrome } = useChrome();
+  const c = chrome.calendars;
   const [selectedCalendar, setSelectedCalendar] = useState<Calendar | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
@@ -210,22 +213,23 @@ function CalendarsPage() {
           to="/gallery" 
           className="inline-flex items-center gap-2 text-[12px] tracking-tight text-foreground/40 hover:text-foreground transition mb-10"
         >
-          ← Back to Gallery
+          <EditableText page="chrome" path={["calendars", "back"]} value={c.back} />
         </Link>
-        
+
         {/* Header */}
         <div className="mb-12">
-          <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3">
-            Gallery · Calendars
-          </p>
-          <h1 
-            className="font-bold tracking-tightest text-foreground leading-[0.88]" 
+          <EditableText page="chrome" path={["calendars", "kicker"]} value={c.kicker} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3" />
+          <EditableText
+            page="chrome"
+            path={["calendars", "title"]}
+            value={c.title}
+            as="h1"
+            className="font-bold tracking-tightest text-foreground leading-[0.88] block"
             style={{ fontSize: "clamp(36px, 5vw, 64px)" }}
-          >
-            Content Calendars
-          </h1>
+          />
           <p className="mt-3 text-[13px] tracking-tight text-foreground/40 max-w-md">
-            Monthly editorial calendars, posting schedules, and campaign timelines — {CALENDARS.length} planning documents.
+            <EditableText page="chrome" path={["calendars", "blurb"]} value={c.blurb} /> — {CALENDARS.length}{" "}
+            <EditableText page="chrome" path={["calendars", "countSuffix"]} value={c.countSuffix} />
           </p>
         </div>
 

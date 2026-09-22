@@ -23,6 +23,8 @@ export const Route = createFileRoute("/about")({
 ───────────────────────────────────────────── */
 
 function PHClock() {
+  const { data: about } = useAbout();
+  const pg = about.page;
   const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -59,7 +61,7 @@ function PHClock() {
       {/* Mac title bar */}
       <div className="flex h-9 items-center gap-1.5 border-b border-border bg-secondary/60 px-4">
         <TrafficLights size={11} />
-        <span className="ml-auto text-[11px] tracking-tight text-foreground/40">Philippine Standard Time · UTC+8</span>
+        <EditableText page="about" path={["page", "clockTitle"]} value={pg.clockTitle} as="span" className="ml-auto text-[11px] tracking-tight text-foreground/40" />
       </div>
 
       <div className="p-6 flex items-center gap-8">
@@ -116,7 +118,7 @@ function PHClock() {
           <p className="mt-2 text-[12px] tracking-tight text-foreground/40">{dateStr}</p>
           <div className="mt-2 flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--traffic-green)" }} />
-            <p className="text-[11px] tracking-tight text-foreground/40">Online · Philippines 🇵🇭</p>
+            <EditableText page="about" path={["page", "clockStatus"]} value={pg.clockStatus} as="p" className="text-[11px] tracking-tight text-foreground/40" />
           </div>
         </div>
       </div>
@@ -137,6 +139,8 @@ function PHClock() {
 
 
 function StoryTerminal({ story }: { story: string[] }) {
+  const { data: about } = useAbout();
+  const pg = about.page;
   return (
     <div
       className="rounded-[16px] overflow-hidden mac-shadow border"
@@ -148,16 +152,16 @@ function StoryTerminal({ story }: { story: string[] }) {
         style={{ background: "oklch(0.23 0.015 250)", borderColor: "oklch(0.30 0.015 250)" }}
       >
         <TrafficLights size={11} />
-        <span className="text-[11px] tracking-tight text-white/40">shanzster — zsh — 80×24</span>
+        <EditableText page="about" path={["page", "terminalTitle"]} value={pg.terminalTitle} as="span" className="text-[11px] tracking-tight text-white/40" />
         <div className="w-10" />
       </div>
 
       {/* Body */}
       <div className="px-6 sm:px-8 py-6 sm:py-7" style={{ fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace" }}>
         <p className="text-[12px] tracking-tight">
-          <span style={{ color: "oklch(0.75 0.15 145)" }}>shanzster@subic-bay</span>
+          <EditableText page="about" path={["page", "terminalPrompt"]} value={pg.terminalPrompt} as="span" style={{ color: "oklch(0.75 0.15 145)" }} />
           <span className="text-white/40"> ~ % </span>
-          <span className="text-white/85">cat my-story.txt</span>
+          <EditableText page="about" path={["page", "terminalCommand"]} value={pg.terminalCommand} as="span" className="text-white/85" />
         </p>
         <div className="mt-4 space-y-4 max-w-2xl">
           {story.map((p, i) => (
@@ -165,7 +169,7 @@ function StoryTerminal({ story }: { story: string[] }) {
           ))}
         </div>
         <p className="mt-5 text-[12px] tracking-tight">
-          <span style={{ color: "oklch(0.75 0.15 145)" }}>shanzster@subic-bay</span>
+          <EditableText page="about" path={["page", "terminalPrompt"]} value={pg.terminalPrompt} as="span" style={{ color: "oklch(0.75 0.15 145)" }} />
           <span className="text-white/40"> ~ % </span>
           <span className="blink text-white/70">▊</span>
         </p>
@@ -180,6 +184,8 @@ function StoryTerminal({ story }: { story: string[] }) {
 
 
 function Journey({ journey }: { journey: JourneyStep[] }) {
+  const { data: about } = useAbout();
+  const pg = about.page;
   return (
     <div className="relative">
       {/* Vertical line */}
@@ -196,7 +202,7 @@ function Journey({ journey }: { journey: JourneyStep[] }) {
               style={{ background: step.color, borderColor: "var(--background)", boxShadow: `0 0 0 3px ${step.color.replace(")", " / 0.18)")}` }}
             />
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: step.color }}>{step.year}</span>
+              <EditableText page="about" path={["journey", i, "year"]} value={step.year} as="span" className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: step.color }} />
               <EditableText page="about" path={["journey", i, "title"]} value={step.title} as="p" className="text-[15px] font-bold tracking-tightest text-foreground" />
             </div>
             <p className="mt-1 text-[13px] leading-relaxed tracking-tight text-foreground/55 max-w-xl">
@@ -205,7 +211,7 @@ function Journey({ journey }: { journey: JourneyStep[] }) {
                 <>
                   {" "}
                   <Link to="/" hash="contact" className="font-semibold text-foreground underline underline-offset-2 hover:opacity-70 transition">
-                    Let's talk →
+                    <EditableText page="about" path={["page", "journeyCta"]} value={pg.journeyCta} />
                   </Link>
                 </>
               )}
@@ -236,6 +242,8 @@ function embedUrl(url: string): string | null {
 }
 
 function VideoIntroSection({ intro }: { intro: VideoIntro }) {
+  const { data: about } = useAbout();
+  const pg = about.page;
   const [open, setOpen] = useState(false);
   if (!intro?.enabled || !intro.url) return null;
 
@@ -255,10 +263,10 @@ function VideoIntroSection({ intro }: { intro: VideoIntro }) {
             {open ? "▾" : "▶"}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[14px] font-semibold tracking-tight text-foreground">{intro.buttonLabel || "Video introduction"}</span>
-            {intro.caption && <span className="block text-[12px] tracking-tight text-foreground/45">{intro.caption}</span>}
+            <EditableText page="about" path={["videoIntro", "buttonLabel"]} value={intro.buttonLabel || "Video introduction"} as="span" className="block text-[14px] font-semibold tracking-tight text-foreground" />
+            {intro.caption && <EditableText page="about" path={["videoIntro", "caption"]} value={intro.caption} as="span" className="block text-[12px] tracking-tight text-foreground/45" />}
           </span>
-          <span className="text-[11px] tracking-tight text-foreground/40">{open ? "Hide" : "Watch"}</span>
+          <span className="text-[11px] tracking-tight text-foreground/40">{open ? pg.videoHide : pg.videoWatch}</span>
         </button>
 
         {open && (
@@ -292,6 +300,7 @@ function VideoIntroSection({ intro }: { intro: VideoIntro }) {
 function AboutPage() {
   const { data: about } = useAbout();
   const { data: home } = useHome();
+  const pg = about.page;
   return (
     <div className="min-h-screen bg-background pb-32">
       <NavBar />
@@ -300,7 +309,7 @@ function AboutPage() {
 
         {/* Back */}
         <Link to="/" className="inline-flex items-center gap-2 text-[12px] tracking-tight text-foreground/40 hover:text-foreground transition mb-10">
-          ← Back
+          <EditableText page="about" path={["page", "back"]} value={pg.back} />
         </Link>
 
         {/* ── HERO ── */}
@@ -326,52 +335,38 @@ function AboutPage() {
               />
               <div className="absolute inset-x-0 bottom-0 h-1/2" style={{ background: "linear-gradient(to top, oklch(1 0 0 / 0.95), transparent)" }} />
               <div className="relative z-10 px-7 pb-6">
-                <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-1">Based in</p>
-                <p className="text-[14px] font-semibold tracking-tight text-foreground">Subic Bay, Philippines 🇵🇭</p>
+                <EditableText page="about" path={["page", "basedInLabel"]} value={pg.basedInLabel} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-1" />
+                <EditableText page="about" path={["page", "basedIn"]} value={pg.basedIn} as="p" className="text-[14px] font-semibold tracking-tight text-foreground" />
               </div>
             </div>
 
             <div className="px-7 py-6">
-              <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-2">Hello, I'm</p>
-              <h1 className="font-bold tracking-tightest text-foreground leading-[0.9]" style={{ fontSize: "clamp(32px, 4vw, 52px)" }}>
-                Shanzster
-              </h1>
-              <p className="mt-1 text-[13px] tracking-tight text-foreground/50">
-                Social Media Manager · Brand Designer · Video Editor
-              </p>
-              <p className="mt-4 text-[13px] leading-relaxed tracking-tight text-foreground/60 max-w-sm">
-                I run the full marketing stack for business owners who don&apos;t want to deal with marketing (or don&apos;t have time for it) — Google Ads, Meta Ads, content, and branding — plus creative strategy for tourism and local businesses. From zero to consistent.
-              </p>
+              <EditableText page="about" path={["page", "helloKicker"]} value={pg.helloKicker} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-2" />
+              <EditableText page="about" path={["page", "name"]} value={pg.name} as="h1" className="font-bold tracking-tightest text-foreground leading-[0.9] block" style={{ fontSize: "clamp(32px, 4vw, 52px)" }} />
+              <EditableText page="about" path={["page", "role"]} value={pg.role} as="p" className="mt-1 text-[13px] tracking-tight text-foreground/50" />
+              <EditableText page="about" path={["page", "paragraph"]} value={pg.paragraph} as="p" className="mt-4 text-[13px] leading-relaxed tracking-tight text-foreground/60 max-w-sm" />
 
               {/* Socials */}
               <div className="mt-4 flex flex-wrap gap-2">
-                {[
-                  { label: "@shanzster.zip", href: "https://instagram.com/shanzster.zip" },
-                  { label: "in/shanzster",   href: "https://www.linkedin.com/in/shanzster/" },
-                  { label: "Email me",       href: "mailto:seanthetechyyy@gmail.com" },
-                ].map(({ label, href }) => (
+                {pg.socialChips.map(({ label, href }, i) => (
                   <a
-                    key={label}
+                    key={i}
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="rounded-full border border-border bg-secondary/50 px-3 py-1 text-[11px] tracking-tight text-foreground/55 hover:text-foreground hover:bg-secondary transition"
                   >
-                    {label} ↗
+                    <EditableText page="about" path={["page", "socialChips", i, "label"]} value={label} /> ↗
                   </a>
                 ))}
               </div>
 
               {/* Quick stats */}
               <div className="mt-5 grid grid-cols-3 divide-x divide-border border border-border rounded-[10px] overflow-hidden">
-                {[
-                  { v: "7",    l: "clients"   },
-                  { v: "2+",   l: "yrs exp"   },
-                  { v: "5+",   l: "brands"    },
-                ].map(({ v, l }) => (
-                  <div key={l} className="px-4 py-3 text-center">
-                    <p className="text-[22px] font-bold tracking-tightest leading-none text-foreground">{v}</p>
-                    <p className="mt-0.5 text-[9px] uppercase tracking-[0.14em] text-foreground/35">{l}</p>
+                {pg.quickStats.map(({ v, l }, i) => (
+                  <div key={i} className="px-4 py-3 text-center">
+                    <EditableText page="about" path={["page", "quickStats", i, "v"]} value={v} as="p" className="text-[22px] font-bold tracking-tightest leading-none text-foreground" />
+                    <EditableText page="about" path={["page", "quickStats", i, "l"]} value={l} as="p" className="mt-0.5 text-[9px] uppercase tracking-[0.14em] text-foreground/35" />
                   </div>
                 ))}
               </div>
@@ -387,41 +382,37 @@ function AboutPage() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="pulse-dot h-2 w-2 rounded-full" style={{ background: "var(--traffic-green)" }} />
-                  <p className="text-[12px] font-semibold tracking-tight text-foreground">Available for work</p>
+                  <EditableText page="about" path={["page", "availabilityTitle"]} value={pg.availabilityTitle} as="p" className="text-[12px] font-semibold tracking-tight text-foreground" />
                 </div>
-                <p className="text-[12px] tracking-tight text-foreground/45">Open to new clients · 2026</p>
+                <EditableText page="about" path={["page", "availabilitySub"]} value={pg.availabilitySub} as="p" className="text-[12px] tracking-tight text-foreground/45" />
               </div>
               <Link
                 to="/"
                 hash="contact"
                 className="cta-primary rounded-full px-5 py-2 text-[12px] font-medium tracking-tight shrink-0"
               >
-                Hire me →
+                <EditableText page="about" path={["page", "availabilityButton"]} value={pg.availabilityButton} />
               </Link>
             </div>
 
             {/* Platforms */}
             <div className="rounded-[16px] border border-border bg-card px-6 py-5">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4">Platforms I manage</p>
+              <EditableText page="about" path={["page", "platformsTitle"]} value={pg.platformsTitle} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
               <div className="flex flex-wrap gap-2">
-                {["Instagram", "Facebook", "TikTok", "Meta Ads", "Google Ads"].map((p) => (
-                  <span key={p} className="rounded-full bg-secondary border border-border px-3 py-1 text-[11px] tracking-tight text-foreground/60">{p}</span>
+                {pg.platforms.map((p, i) => (
+                  <EditableText key={i} page="about" path={["page", "platforms", i]} value={p} as="span" className="rounded-full bg-secondary border border-border px-3 py-1 text-[11px] tracking-tight text-foreground/60" />
                 ))}
               </div>
             </div>
 
             {/* Currently */}
             <div className="rounded-[16px] border border-border bg-card px-6 py-5">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4">Currently</p>
+              <EditableText page="about" path={["page", "currentlyTitle"]} value={pg.currentlyTitle} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-4" />
               <div className="space-y-2.5">
-                {[
-                  { dot: "var(--traffic-green)",  label: "Running growth for 4 fashion e-commerce brands" },
-                  { dot: "var(--traffic-yellow)", label: "Building The Snappy Nomad — my own travel camera brand" },
-                  { dot: "oklch(0.62 0.18 255)",  label: "Sketching daily — Procreate & a Canson sketchbook" },
-                ].map(({ dot, label }) => (
-                  <div key={label} className="flex items-center gap-2.5">
-                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: dot }} />
-                    <span className="text-[12px] tracking-tight text-foreground/65">{label}</span>
+                {pg.currently.map((label, i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: ["var(--traffic-green)", "var(--traffic-yellow)", "oklch(0.62 0.18 255)"][i % 3] }} />
+                    <EditableText page="about" path={["page", "currently", i]} value={label} as="span" className="text-[12px] tracking-tight text-foreground/65" />
                   </div>
                 ))}
               </div>
@@ -435,7 +426,7 @@ function AboutPage() {
         {/* ── STORY ── */}
         <Reveal>
           <div className="mb-8">
-            <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-5">01 — my story</p>
+            <EditableText page="about" path={["page", "kickerStory"]} value={pg.kickerStory} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-5" />
             <StoryTerminal story={about.story} />
           </div>
         </Reveal>
@@ -443,7 +434,7 @@ function AboutPage() {
         {/* ── JOURNEY ── */}
         <Reveal delay={50}>
           <div className="mb-8 rounded-[16px] border border-border bg-card px-7 sm:px-9 py-7">
-            <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-6">02 — the journey</p>
+            <EditableText page="about" path={["page", "kickerJourney"]} value={pg.kickerJourney} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-6" />
             <Journey journey={about.journey} />
           </div>
         </Reveal>
@@ -451,7 +442,7 @@ function AboutPage() {
         {/* ── BELIEFS ── */}
         <Reveal delay={50}>
           <div className="mb-8">
-            <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-5">03 — how I work</p>
+            <EditableText page="about" path={["page", "kickerBeliefs"]} value={pg.kickerBeliefs} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-5" />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {about.beliefs.map((b, i) => (
                 <div
@@ -476,13 +467,13 @@ function AboutPage() {
 
         {/* ── CREDENTIALS ── */}
         <div className="mb-8">
-          <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-5">04 — credentials</p>
+          <EditableText page="about" path={["page", "kickerCredentials"]} value={pg.kickerCredentials} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-5" />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {about.credentials.map((section, si) => (
               <div key={section.type} className="rounded-[16px] border border-border bg-card overflow-hidden">
                 <div className="px-6 py-4 border-b border-border bg-secondary/40 flex items-center gap-2">
                   <span className="text-foreground/40">{section.icon}</span>
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-foreground/50 font-medium">{section.type}</p>
+                  <EditableText page="about" path={["credentials", si, "type"]} value={section.type} as="p" className="text-[11px] uppercase tracking-[0.2em] text-foreground/50 font-medium" />
                 </div>
                 <div className="divide-y divide-border">
                   {section.items.map((item, i) => (
@@ -501,20 +492,20 @@ function AboutPage() {
         {/* ── TOOLS STACK ── */}
         <div className="mb-8 rounded-[16px] border border-border bg-card overflow-hidden">
           <div className="px-6 py-4 border-b border-border bg-secondary/40">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-foreground/50 font-medium">05 — tools I use daily</p>
+            <EditableText page="about" path={["page", "kickerTools"]} value={pg.kickerTools} as="p" className="text-[11px] uppercase tracking-[0.2em] text-foreground/50 font-medium" />
           </div>
           <div className="p-6 flex flex-wrap gap-2">
-            {about.tools.map((tool) => (
+            {about.tools.map((tool, ti) => (
               <div
-                key={tool.name}
+                key={ti}
                 className="flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-3 py-1.5"
               >
                 <span
                   className="h-2 w-2 rounded-full shrink-0"
                   style={{ background: tool.color }}
                 />
-                <span className="text-[12px] tracking-tight text-foreground/70">{tool.name}</span>
-                <span className="text-[10px] tracking-tight text-foreground/30">{tool.category}</span>
+                <EditableText page="about" path={["tools", ti, "name"]} value={tool.name} as="span" className="text-[12px] tracking-tight text-foreground/70" />
+                <EditableText page="about" path={["tools", ti, "category"]} value={tool.category} as="span" className="text-[10px] tracking-tight text-foreground/30" />
               </div>
             ))}
           </div>
@@ -522,10 +513,10 @@ function AboutPage() {
 
         {/* ── DEVICES ── */}
         <div className="mb-8">
-          <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-5">06 — setup & devices</p>
+          <EditableText page="about" path={["page", "kickerDevices"]} value={pg.kickerDevices} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-5" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {about.devices.map((device) => (
-              <div key={device.name} className="rounded-[16px] border border-border bg-card px-5 py-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_32px_-10px_oklch(0.2_0.02_240/0.2)]">
+            {about.devices.map((device, di) => (
+              <div key={di} className="rounded-[16px] border border-border bg-card px-5 py-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_32px_-10px_oklch(0.2_0.02_240/0.2)]">
                 <div
                   className="flex h-12 w-12 items-center justify-center rounded-[12px] mb-4 overflow-hidden"
                   style={{ background: "var(--secondary)" }}
@@ -541,13 +532,13 @@ function AboutPage() {
                     }}
                   />
                 </div>
-                <p className="text-[13px] font-semibold tracking-tight text-foreground">{device.name}</p>
-                <p className="text-[11px] tracking-tight text-foreground/40 mt-0.5 mb-3">{device.role}</p>
+                <EditableText page="about" path={["devices", di, "name"]} value={device.name} as="p" className="text-[13px] font-semibold tracking-tight text-foreground" />
+                <EditableText page="about" path={["devices", di, "role"]} value={device.role} as="p" className="text-[11px] tracking-tight text-foreground/40 mt-0.5 mb-3" />
                 <div className="space-y-1">
-                  {device.specs.map((spec) => (
-                    <div key={spec} className="flex items-center gap-1.5">
+                  {device.specs.map((spec, spi) => (
+                    <div key={spi} className="flex items-center gap-1.5">
                       <span className="h-1 w-1 rounded-full bg-foreground/20 shrink-0" />
-                      <span className="text-[11px] tracking-tight text-foreground/50">{spec}</span>
+                      <EditableText page="about" path={["devices", di, "specs", spi]} value={spec} as="span" className="text-[11px] tracking-tight text-foreground/50" />
                     </div>
                   ))}
                 </div>
@@ -559,15 +550,15 @@ function AboutPage() {
         {/* ── CTA ── */}
         <div className="rounded-[14px] border border-border bg-card px-8 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <p className="text-[15px] font-semibold tracking-tight text-foreground">Now you know me — let's talk about your brand.</p>
-            <p className="mt-1 text-[12px] tracking-tight text-foreground/50">I reply within 24 hours. Usually faster.</p>
+            <EditableText page="about" path={["page", "ctaTitle"]} value={pg.ctaTitle} as="p" className="text-[15px] font-semibold tracking-tight text-foreground" />
+            <EditableText page="about" path={["page", "ctaBody"]} value={pg.ctaBody} as="p" className="mt-1 text-[12px] tracking-tight text-foreground/50" />
           </div>
           <div className="flex items-center gap-3">
             <Link to="/clients" className="rounded-full border border-border bg-secondary px-5 py-2 text-[12px] tracking-tight text-foreground/60 hover:bg-card transition shrink-0">
-              See clients →
+              <EditableText page="about" path={["page", "ctaClients"]} value={pg.ctaClients} />
             </Link>
             <Link to="/" hash="contact" className="cta-primary rounded-full px-5 py-2 text-[12px] font-medium tracking-tight shrink-0">
-              Hire me →
+              <EditableText page="about" path={["page", "ctaHire"]} value={pg.ctaHire} />
             </Link>
           </div>
         </div>

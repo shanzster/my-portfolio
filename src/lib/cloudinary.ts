@@ -12,7 +12,7 @@
  */
 export const CLOUDINARY = {
   cloudName: "e7fw2vvs",
-  uploadPreset: "REPLACE_WITH_UNSIGNED_PRESET",
+  uploadPreset: "shanzster_unsigned",
 };
 
 export function cloudinaryConfigured(): boolean {
@@ -53,4 +53,21 @@ export async function uploadToCloudinary(file: File): Promise<string> {
   const data = (await res.json()) as { secure_url?: string };
   if (!data.secure_url) throw new Error("Upload succeeded but no URL was returned.");
   return data.secure_url;
+}
+
+/**
+ * Given a Cloudinary PDF URL, return a JPEG URL for page 1.
+ * Cloudinary serves this natively — no extra API call needed.
+ *
+ * e.g. https://res.cloudinary.com/e7fw2vvs/image/upload/v123/file.pdf
+ *   →  https://res.cloudinary.com/e7fw2vvs/image/upload/pg_1,f_jpg,q_80,w_800/v123/file.pdf
+ *
+ * Falls back to the original URL if it doesn't look like a Cloudinary PDF.
+ */
+export function cloudinaryPdfThumbnail(pdfUrl: string): string {
+  if (!pdfUrl) return pdfUrl;
+  // Only transform Cloudinary-hosted PDFs
+  if (!pdfUrl.includes("res.cloudinary.com")) return pdfUrl;
+  // Insert transformation flags after /upload/
+  return pdfUrl.replace("/upload/", "/upload/pg_1,f_jpg,q_80,w_800/");
 }

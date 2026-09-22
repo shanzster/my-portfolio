@@ -41,9 +41,98 @@ export type HomeTool = {
   group: string;
   how: string;
   usedFor: string[];
+  /* Optional uploaded icon URL; empty falls back to the built-in artwork. */
+  icon?: string;
 };
 
 export type Stat = { value: string; label: string };
+
+/* Text for the home-page About section (section 01). */
+export type HomeClientRef = { name: string; sub: string };
+export type SkillGroup = { cat: string; items: string[] };
+export type HomeAbout = {
+  kickerWho: string;
+  kickerClients: string;
+  kickerSkills: string;
+  statement: string[];
+  paragraph: string;
+  stats: Stat[];
+  clients: HomeClientRef[];
+  skills: SkillGroup[];
+};
+
+/* Text for the hero folder scene. Icon glyphs + fan geometry stay in code
+   (merged by index — see SERVICES in HeroFolder.tsx). */
+export type HeroFolderService = { label: string; tagline: string; story: string[]; tags: string[] };
+export type HeroFolderContent = {
+  services: HeroFolderService[];
+  desktopLabels: string[];
+  folderLabel: string;
+  hoverHint: string;
+  chooseTitle: string;
+  readMore: string;
+};
+
+/* Text around the Selected Work folder scene (cards themselves read from the
+   work collection). */
+export type WorkFolderContent = {
+  hintDesktop: string;
+  hintMobile: string;
+  openBadge: string;
+  selectedWorkKicker: string;
+  checkoutHint: string;
+  checkoutButton: string;
+  comingSoonKicker: string;
+  comingSoonTitle: string;
+  comingSoonBody: string;
+  comingSoonHandle: string;
+  comingSoonBodyEnd: string;
+  comingSoonFollow: string;
+  comingSoonGotIt: string;
+};
+
+/* The "In a hurry?" skim modal. */
+export type SkimPromptContent = {
+  windowTitle: string;
+  title: string;
+  body: string;
+  skimButton: string;
+  fullButton: string;
+};
+
+/* Name tag over the About photo. */
+export type AboutSceneContent = { kicker: string; name: string; role: string };
+
+/* The macOS notification that slides in once per session. */
+export type HomeNotification = {
+  title: string;
+  time: string;
+  body: string;
+  cta: string;
+  dismiss: string;
+};
+
+/* Numbered section headers ("01 About", "02 Selected work", …). */
+export type SectionHead = { index: string; title: string; subtitle?: string };
+
+/* Sidebars + labels around the Selected Work folder. */
+export type WorkAside = {
+  availability: string;
+  stamp: string;
+  folderHint: string;
+  currentlyTitle: string;
+  currently: string[];
+  numbersTitle: string;
+  numbers: Stat[];
+  servicesTitle: string;
+  services: string[];
+  clientsTitle: string;
+  clients: { name: string; tag: string }[];
+  recentTitle: string;
+  recent: { label: string; time: string }[];
+  ctaText: string;
+  ctaButton: string;
+};
 export type WeeklyItem = { text: string; done: boolean };
 export type LinkItem = { label: string; href: string; handle?: string };
 
@@ -51,7 +140,25 @@ export type SiteInfo = {
   heroBadge: string;
   heroHeadlineTop: string;
   heroHeadlineAccent: string;
+  heroLogo: string;
+  heroCtaPrimary: string;
+  heroCtaWork: string;
+  heroCtaCv: string;
+  heroRoles: string[];
+  heroTicker: string[];
   heroStats: Stat[];
+  toolkitHeadline: string;
+  sections: SectionHead[];
+  servicesIncludesLabel: string;
+  servicesBestForLabel: string;
+  servicesCtaTitle: string;
+  servicesCtaBody: string;
+  servicesCtaButton: string;
+  latestWindowTitle: string;
+  latestFooterNote: string;
+  latestFooterLink: string;
+  faqWindowTitle: string;
+  deliveredLabel: string;
   aboutPills: Stat[];
   ticker: string[];
   weeklyTitle: string;
@@ -61,6 +168,14 @@ export type SiteInfo = {
   contactHeadlineTop: string;
   contactHeadlineAccent: string;
   contactBlurb: string;
+  contactToLabel: string;
+  contactFromLabel: string;
+  contactFromValue: string;
+  contactSubjectLabel: string;
+  contactSubjectValue: string;
+  contactSendButton: string;
+  contactCopyButton: string;
+  basedInLabel: string;
   availabilityTitle: string;
   availabilityBody: string;
   socials: LinkItem[];
@@ -68,8 +183,12 @@ export type SiteInfo = {
   locationNote: string;
   footerBrand: string;
   footerBlurb: string;
+  exploreTitle: string;
+  footerExplore: LinkItem[];
+  connectTitle: string;
   footerConnect: LinkItem[];
   footerCopyright: string;
+  searchHint: string;
   footerTagline: string;
 };
 
@@ -80,6 +199,13 @@ export type HomeContent = {
   process: ProcessStep[];
   posts: HomePost[];
   tools: HomeTool[];
+  about: HomeAbout;
+  notification: HomeNotification;
+  workAside: WorkAside;
+  heroFolder: HeroFolderContent;
+  workFolder: WorkFolderContent;
+  skimPrompt: SkimPromptContent;
+  aboutScene: AboutSceneContent;
   profileImage: string;
   site: SiteInfo;
 };
@@ -226,11 +352,224 @@ export const HOME: HomeContent = {
     { name: "ChatGPT", category: "AI writing", group: "AI", how: "I use ChatGPT to accelerate content creation — drafting captions, brainstorming campaign angles, writing ad copy variations, and refining brand voice. It's a creative partner, not a replacement.", usedFor: ["Caption writing", "Ad copy", "Campaign ideation", "Brand voice"] },
     { name: "Adobe Firefly", category: "AI image gen", group: "AI", how: "Adobe Firefly lets me generate and edit visuals directly inside Photoshop and Illustrator — filling backgrounds, generating concept art, and creating on-brand imagery faster than traditional methods.", usedFor: ["Generative fill", "Concept visuals", "Background gen", "Creative exploration"] },
   ],
+  about: {
+    kickerWho: "01 — who i am",
+    kickerClients: "02 — clients",
+    kickerSkills: "03 — tools & skills",
+    statement: ["I grow pages.", "Build brands.", "Make content stick."],
+    paragraph:
+      "Social media manager & creative developer from Subic Bay, Philippines. I run the full marketing stack for business owners who don't want to deal with marketing (or don't have time for it) — Google Ads, Meta Ads, content, and branding — and I've built pages and identities from zero.",
+    stats: [
+      { value: "9", label: "brands managed" },
+      { value: "2+", label: "yrs freelancing" },
+      { value: "5+", label: "brands built" },
+    ],
+    clients: [
+      { name: "Oaklynwear", sub: "Fashion · Full-stack · USA" },
+      { name: "Roselyn Atelier", sub: "Fashion · Full-stack · UK" },
+      { name: "Lirenne Wear", sub: "Fashion · Full-stack · USA" },
+      { name: "Bella Monza", sub: "Fashion · Full-stack" },
+      { name: "Nova Noir", sub: "Fashion · Full-stack · USA" },
+      { name: "StealandStyle", sub: "Fashion · Social media" },
+      { name: "Masinloc Tourism Office", sub: "Creative Strategist · Facebook" },
+      { name: "Fast Snaking Services", sub: "Local service · Facebook" },
+      { name: "The Snappy Nomad", sub: "Branding strategy · Coming soon" },
+    ],
+    skills: [
+      { cat: "Design", items: ["Adobe Illustrator", "Photoshop", "Canva"] },
+      { cat: "Social & Ads", items: ["Google Ads", "Meta Ads Manager", "Instagram", "Facebook", "TikTok", "Content Strategy"] },
+      { cat: "Email", items: ["Klaviyo", "Email Marketing", "Flows & Automation"] },
+      { cat: "Video", items: ["CapCut", "Reels", "Motion captions"] },
+      { cat: "AI", items: ["Claude", "Claude Code", "Higgsfield AI", "ChatGPT"] },
+      { cat: "E-comm", items: ["Full-Funnel Strategy", "Product Research", "Shopify", "Dropshipping", "Poky", "PPSpy"] },
+    ],
+  },
+  heroFolder: {
+    services: [
+      {
+        label: "Content Strategist",
+        tagline: "Words that build systems, not just posts.",
+        story: [
+          "I don't just write — I architect content that compounds. Every piece I create is part of a larger system designed to attract, educate, and convert.",
+          "From editorial calendars to topic clusters, I build content engines that keep working long after I've shipped them. I've managed pages where a single strategy shift tripled organic reach in under 60 days.",
+          "My approach: understand the audience deeply, map the funnel honestly, then create content that earns attention instead of begging for it.",
+        ],
+        tags: ["Editorial Systems", "SEO Writing", "Content Calendars", "Storytelling"],
+      },
+      {
+        label: "Social Media Marketing",
+        tagline: "Scroll-stopping content for real audiences.",
+        story: [
+          "I've managed social pages for fashion e-commerce brands, tourism offices, and local businesses — each with a completely different voice, audience, and goal.",
+          "For fashion stores like Oaklynwear, Roselyn Atelier, Lirenne Wear, Bella Monza, and Nova Noir, I run everything — content, ads, branding, and management. I also handle StealandStyle on Instagram, and for Masinloc Tourism I created strategy and content that made people actually want to visit.",
+          "I understand the algorithm, but more importantly I understand people. Engagement isn't a metric I chase — it's a result of content that genuinely resonates.",
+        ],
+        tags: ["Instagram", "Facebook", "Reels", "Community Building", "Brand Voice"],
+      },
+      {
+        label: "Brand Identity",
+        tagline: "Visuals that make people feel something.",
+        story: [
+          "Brand identity is more than a logo. It's the feeling someone gets when they see your content before they even read a word.",
+          "I work in Illustrator, Photoshop, and Canva to build visual systems — color palettes, typography hierarchies, and design languages that stay consistent across every touchpoint.",
+          "My design taste leans premium and modern: clean layouts, strong type, and just enough personality to feel human. I've built identities for print shops, restaurants, and social-first brands.",
+        ],
+        tags: ["Visual Identity", "Adobe Illustrator", "Typography", "Canva", "Design Systems"],
+      },
+      {
+        label: "Video Editing",
+        tagline: "Edits that hit before the caption loads.",
+        story: [
+          "I edit with the same instinct I use for design — every cut, caption, and sound choice is intentional. My style is cinematic but internet-native: freeze frames, motion text, and sound design that makes people rewatch.",
+          "I've produced vlogs, promotional reels, collection launches, and campaign content. I know the difference between a video that gets views and one that gets saved.",
+          "The goal is always the same: make it feel like it was made for the person watching it.",
+        ],
+        tags: ["Reels", "Vlogs", "Motion Captions", "Sound Design", "Promotional Content"],
+      },
+      {
+        label: "Campaign Strategy",
+        tagline: "From idea to execution, start to finish.",
+        story: [
+          "A campaign without strategy is just noise. I plan launches, promotions, and awareness pushes with a clear narrative arc — what we're saying, who we're saying it to, and why they should care.",
+          "I run paid campaigns on both Meta and Google Ads for fashion e-commerce brands — and I've also run zero-budget organic campaigns for local businesses that outperformed paid, purely through timing, creative, and community leverage.",
+          "My process: define the goal, reverse-engineer the audience journey, build the content stack, then execute with consistency. No guesswork.",
+        ],
+        tags: ["Launch Strategy", "Meta Ads", "Google Ads", "Campaign Planning", "Organic Growth"],
+      },
+    ],
+    desktopLabels: ["web design", "Photoshop", "CapCut", "Illustrator", "portfolio", "brand_kit.jpeg", "social media", "Meta Ads", "Canva", "campaign_2025.jpeg"],
+    folderLabel: "portfolio",
+    hoverHint: "hover the folder",
+    chooseTitle: "Choose a service",
+    readMore: "click to read more →",
+  },
+  workFolder: {
+    hintDesktop: "hover to open · click a card to view",
+    hintMobile: "tap to open · tap a card to view",
+    openBadge: "open →",
+    selectedWorkKicker: "Selected work",
+    checkoutHint: "Tap checkout to open the full page",
+    checkoutButton: "Check out →",
+    comingSoonKicker: "Coming Soon",
+    comingSoonTitle: "Brand is being built right now.",
+    comingSoonBody: "Come back later to see it — or get updates on",
+    comingSoonHandle: "@shanzster.zip",
+    comingSoonBodyEnd: "on Instagram.",
+    comingSoonFollow: "Follow @shanzster.zip ↗",
+    comingSoonGotIt: "Got it",
+  },
+  skimPrompt: {
+    windowTitle: "quick view",
+    title: "In a hurry?",
+    body: "Skim the whole portfolio in one screen — no scrolling, just the essentials. Or take the full tour.",
+    skimButton: "I'll skim through it →",
+    fullButton: "Explore the full site",
+  },
+  aboutScene: {
+    kicker: "about me",
+    name: "Shanzster",
+    role: "Creative Developer · Social Media Manager",
+  },
+  notification: {
+    title: "Shanzster",
+    time: "now",
+    body: "Taking on new clients for 2026 — want your brand next?",
+    cta: "Reply →",
+    dismiss: "Dismiss",
+  },
+  workAside: {
+    availability: "Available for new projects",
+    stamp: "Shanzster · 2026",
+    folderHint: "hover to open · click to view",
+    currentlyTitle: "currently",
+    currently: ["Social media strategy", "Brand identity work", "Video content"],
+    numbersTitle: "by the numbers",
+    numbers: [
+      { value: "9", label: "brands managed" },
+      { value: "5+", label: "brands built" },
+      { value: "2+", label: "yrs freelancing" },
+      { value: "5", label: "platforms" },
+    ],
+    servicesTitle: "services",
+    services: ["Social Media Mgmt", "Brand Identity", "Content Strategy", "Video Editing", "Meta Ads", "Google Ads", "Copywriting"],
+    clientsTitle: "clients",
+    clients: [
+      { name: "Oaklynwear", tag: "Fashion · US" },
+      { name: "Roselyn Atelier", tag: "Fashion · UK" },
+      { name: "Lirenne Wear", tag: "Fashion · US" },
+      { name: "Bella Monza", tag: "Fashion" },
+      { name: "Nova Noir", tag: "Fashion · US" },
+      { name: "StealandStyle", tag: "Fashion · IG" },
+      { name: "Masinloc Tourism", tag: "Strategy · FB" },
+      { name: "Fast Snaking", tag: "Service · FB" },
+      { name: "The Snappy Nomad", tag: "Brand · Soon" },
+    ],
+    recentTitle: "recent",
+    recent: [
+      { label: "Oaklynwear — full-stack takeover", time: "2026" },
+      { label: "Nova Noir — full-stack launch", time: "2026" },
+      { label: "Roselyn Atelier — paid + organic", time: "2026" },
+      { label: "Lirenne Wear — brand & ads", time: "2026" },
+      { label: "Bella Monza — full-stack setup", time: "2026" },
+      { label: "StealandStyle — social management", time: "2026" },
+      { label: "Masinloc — Joiners Program", time: "2026" },
+      { label: "The Snappy Nomad — pre-launch", time: "2026" },
+    ],
+    ctaText: "Want something like this for your brand?",
+    ctaButton: "Let's work together →",
+  },
   profileImage: "",
   site: {
     heroBadge: "Social Media Manager · Content Creator · Available 2026",
     heroHeadlineTop: "Your One Man",
     heroHeadlineAccent: "Creative.",
+    heroLogo: "",
+    heroCtaPrimary: "Hire me →",
+    heroCtaWork: "See the work",
+    heroCtaCv: "Download CV ↓",
+    heroRoles: [
+      "content strategist",
+      "growth marketer",
+      "social media manager",
+      "paid ads manager",
+      "brand storyteller",
+      "video editor",
+    ],
+    heroTicker: [
+      "Social Media Management",
+      "Brand Identity",
+      "Content Strategy",
+      "Meta Ads",
+      "Google Ads",
+      "Fashion E-commerce",
+      "Video Editing",
+      "Canva Templates",
+      "Reels & Short-form",
+      "Community Management",
+      "Campaign Planning",
+      "Visual Storytelling",
+    ],
+    toolkitHeadline: "[ my toolkit ]",
+    sections: [
+      { index: "01", title: "About" },
+      { index: "02", title: "Selected work" },
+      { index: "03", title: "Services" },
+      { index: "04", title: "How I Work", subtitle: "The process, start to finish." },
+      { index: "05", title: "What Clients Say" },
+      { index: "06", title: "Latest Work", subtitle: "From the pages I manage." },
+      { index: "07", title: "FAQ", subtitle: "Questions I get asked a lot." },
+      { index: "08", title: "Contact" },
+    ],
+    servicesIncludesLabel: "Includes",
+    servicesBestForLabel: "Best for:",
+    servicesCtaTitle: "Not sure which fits?",
+    servicesCtaBody: "Send me a message and we'll figure it out.",
+    servicesCtaButton: "Get in touch →",
+    latestWindowTitle: "latest_posts.grid",
+    latestFooterNote: "Recent posts from managed social media accounts",
+    latestFooterLink: "View live ↗",
+    faqWindowTitle: "faq.txt",
+    deliveredLabel: "Delivered",
     heroStats: [
       { value: "9", label: "brands managed" },
       { value: "5+", label: "brands built" },
@@ -262,6 +601,14 @@ export const HOME: HomeContent = {
     contactHeadlineAccent: "together.",
     contactBlurb:
       "Whether you need a social media manager, a brand identity, or just want to talk strategy — I'm open. Send me a message and I'll get back to you within 24 hours.",
+    contactToLabel: "To",
+    contactFromLabel: "From",
+    contactFromValue: "you@yourbusiness.com",
+    contactSubjectLabel: "Subject",
+    contactSubjectValue: "I'd like to work with you",
+    contactSendButton: "Send message →",
+    contactCopyButton: "Copy email",
+    basedInLabel: "Based in",
     availabilityTitle: "Available for new projects",
     availabilityBody: "Currently taking on social media management, brand identity, and content strategy projects.",
     socials: [
@@ -275,6 +622,15 @@ export const HOME: HomeContent = {
     locationNote: "Available remotely worldwide",
     footerBrand: "Shanzster",
     footerBlurb: "Full-stack marketing for fashion e-commerce brands — ads, content, and branding under one roof.",
+    exploreTitle: "Explore",
+    footerExplore: [
+      { label: "Selected Work", href: "/#work" },
+      { label: "Services", href: "/#services" },
+      { label: "Clients", href: "/clients" },
+      { label: "About Me", href: "/about" },
+      { label: "Gallery", href: "/gallery" },
+    ],
+    connectTitle: "Connect",
     footerConnect: [
       { label: "Instagram ↗", href: "https://instagram.com/shanzster.zip" },
       { label: "LinkedIn ↗", href: "https://www.linkedin.com/in/shanzster/" },
@@ -282,6 +638,7 @@ export const HOME: HomeContent = {
       { label: "seanthetechyyy@gmail.com", href: "mailto:seanthetechyyy@gmail.com" },
     ],
     footerCopyright: "© 2026 Shanzster · Subic Bay, Philippines",
+    searchHint: "Press ⌘K to search",
     footerTagline: "Built like a Mac. Designed to convert.",
   },
 };

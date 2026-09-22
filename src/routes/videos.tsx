@@ -3,11 +3,13 @@ import { useState } from "react";
 import { NavBar } from "@/components/NavBar";
 import { TrafficLights } from "@/components/TrafficLights";
 import { type Video } from "@/lib/videos-data";
-import { useVideos } from "@/lib/content";
+import { useVideos, useChrome } from "@/lib/content";
 import { EditableText, useEdit } from "@/lib/edit-mode";
 
 /* ─── Coming Soon Modal ─── */
 function ComingSoonModal({ onClose }: { onClose: () => void }) {
+  const { data: chrome } = useChrome();
+  const cs = chrome.videos.comingSoon;
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
@@ -22,7 +24,7 @@ function ComingSoonModal({ onClose }: { onClose: () => void }) {
         {/* Title bar */}
         <div className="flex h-10 items-center justify-between border-b border-border bg-secondary/60 px-4" style={{ borderRadius: "20px 20px 0 0" }}>
           <TrafficLights onClose={onClose} />
-          <span className="text-[11px] tracking-tight text-foreground/45">Videos & Reels</span>
+          <EditableText page="chrome" path={["videos", "comingSoon", "windowTitle"]} value={cs.windowTitle} as="span" className="text-[11px] tracking-tight text-foreground/45" />
           <button onClick={onClose} className="text-[11px] tracking-tight text-foreground/35 hover:text-foreground transition">✕ close</button>
         </div>
 
@@ -34,21 +36,19 @@ function ComingSoonModal({ onClose }: { onClose: () => void }) {
           >
             <span className="text-[30px]">🎬</span>
           </div>
-          <p className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-2">Building it</p>
-          <h3 className="text-[20px] font-bold tracking-tightest text-foreground leading-tight mb-3">
-            Videos section is<br />being built.
-          </h3>
+          <EditableText page="chrome" path={["videos", "comingSoon", "kicker"]} value={cs.kicker} as="p" className="text-[10px] uppercase tracking-[0.22em] text-foreground/35 mb-2" />
+          <EditableText page="chrome" path={["videos", "comingSoon", "title"]} value={cs.title} as="h3" className="text-[20px] font-bold tracking-tightest text-foreground leading-tight mb-3 block" />
           <p className="text-[13px] leading-relaxed tracking-tight text-foreground/55 mb-6">
-            Come back later to see all the video content — or get updates on{" "}
+            <EditableText page="chrome" path={["videos", "comingSoon", "body"]} value={cs.body} />{" "}
             <a
               href="https://instagram.com/shanzster.zip"
               target="_blank"
               rel="noopener noreferrer"
               className="font-semibold text-foreground/80 underline underline-offset-2 hover:text-foreground transition"
             >
-              @shanzster.zip
+              <EditableText page="chrome" path={["videos", "comingSoon", "handle"]} value={cs.handle} />
             </a>{" "}
-            on Instagram.
+            <EditableText page="chrome" path={["videos", "comingSoon", "bodyEnd"]} value={cs.bodyEnd} />
           </p>
           <div className="flex flex-col gap-2.5">
             <a
@@ -57,13 +57,13 @@ function ComingSoonModal({ onClose }: { onClose: () => void }) {
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 rounded-full bg-foreground px-6 py-2.5 text-[12px] tracking-tight text-background transition hover:opacity-85"
             >
-              Follow @shanzster.zip ↗
+              <EditableText page="chrome" path={["videos", "comingSoon", "follow"]} value={cs.follow} />
             </a>
             <button
               onClick={onClose}
               className="rounded-full border border-border px-6 py-2.5 text-[12px] tracking-tight text-foreground/50 transition hover:bg-secondary"
             >
-              Got it
+              <EditableText page="chrome" path={["videos", "comingSoon", "gotIt"]} value={cs.gotIt} />
             </button>
           </div>
         </div>
@@ -250,6 +250,8 @@ function FullViewModal({
 /* ─── PAGE ─── */
 function VideosPage() {
   const { items: VIDEOS } = useVideos();
+  const { data: chrome } = useChrome();
+  const c = chrome.videos;
   const [showComingSoon, setShowComingSoon] = useState(false);
 
   return (
@@ -263,23 +265,21 @@ function VideosPage() {
           to="/gallery" 
           className="inline-flex items-center gap-2 text-[12px] tracking-tight text-foreground/40 hover:text-foreground transition mb-10"
         >
-          ← Back to Gallery
+          <EditableText page="chrome" path={["videos", "back"]} value={c.back} />
         </Link>
-        
+
         {/* Header */}
         <div className="mb-12">
-          <p className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3">
-            Gallery · Videos
-          </p>
-          <h1 
-            className="font-bold tracking-tightest text-foreground leading-[0.88]" 
+          <EditableText page="chrome" path={["videos", "kicker"]} value={c.kicker} as="p" className="text-[10px] uppercase tracking-[0.26em] text-foreground/35 mb-3" />
+          <EditableText
+            page="chrome"
+            path={["videos", "title"]}
+            value={c.title}
+            as="h1"
+            className="font-bold tracking-tightest text-foreground leading-[0.88] block"
             style={{ fontSize: "clamp(36px, 5vw, 64px)" }}
-          >
-            Videos & Reels
-          </h1>
-          <p className="mt-3 text-[13px] tracking-tight text-foreground/40 max-w-md">
-            Reels, vlogs, promo videos, motion captions, and collection launches — currently being built.
-          </p>
+          />
+          <EditableText page="chrome" path={["videos", "blurb"]} value={c.blurb} as="p" className="mt-3 text-[13px] tracking-tight text-foreground/40 max-w-md" />
         </div>
 
         {/* Locked Grid */}
@@ -298,7 +298,7 @@ function VideosPage() {
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                   <span className="text-white/10 text-[32px]">▶</span>
                   <p className="text-white/12 text-[10px] tracking-[0.14em] uppercase">
-                    Video
+                    {c.lockedTile}
                   </p>
                 </div>
                 
@@ -308,25 +308,19 @@ function VideosPage() {
                   style={{ background: "oklch(0.1 0.01 240 / 0.6)", backdropFilter: "blur(3px)" }}
                 >
                   <span className="text-[22px]">🎬</span>
-                  <p className="text-[8px] uppercase tracking-[0.16em] text-white/60">building</p>
+                  <p className="text-[8px] uppercase tracking-[0.16em] text-white/60">{c.lockedBadge}</p>
                 </div>
                 
                 {/* Category Badge */}
                 <div className="absolute top-3 left-3">
-                  <span className="inline-block px-2.5 py-1 rounded-full bg-background/90 backdrop-blur-sm text-[9px] uppercase tracking-[0.2em] text-foreground/60 border border-border/30">
-                    {video.category}
-                  </span>
+                  <EditableText collection="videos" id={video.id} item={video} path={["category"]} value={video.category} as="span" className="inline-block px-2.5 py-1 rounded-full bg-background/90 backdrop-blur-sm text-[9px] uppercase tracking-[0.2em] text-foreground/60 border border-border/30" />
                 </div>
               </div>
 
               {/* Info */}
               <div className="mt-3">
-                <h3 className="text-[13px] font-medium tracking-tight text-foreground leading-snug">
-                  {video.title}
-                </h3>
-                <p className="text-[11px] tracking-tight text-foreground/50 mt-1">
-                  {video.client}
-                </p>
+                <EditableText collection="videos" id={video.id} item={video} path={["title"]} value={video.title} as="h3" className="text-[13px] font-medium tracking-tight text-foreground leading-snug" />
+                <EditableText collection="videos" id={video.id} item={video} path={["client"]} value={video.client} as="p" className="text-[11px] tracking-tight text-foreground/50 mt-1" />
               </div>
             </button>
           ))}

@@ -53,6 +53,34 @@ Two ways to edit: an **/admin dashboard** and **in-place edit mode** on the publ
 - Already wired into: `index.tsx` (28 editable spots), `about.tsx`, `socials.tsx`,
   `clients.tsx`, `services.tsx`, `ads.tsx`, `graphics.tsx`, `calendars.tsx`,
   `videos.tsx`, `AboutScene.tsx`.
+- 2026-08-21: home About section (statement/paragraph/stats/clients/skills — content
+  moved from hardcoded JSX into `home.about` seed + `HOME_FIELDS`) and the toolkit
+  showcase description cards (`tools[i].name/category/how`) are now editable too.
+  Note: renaming a tool inline loses its icon (icons merge by name in `TOOLS`).
+- 2026-08-21 (second pass): **everything is editable now.** All hardcoded text on
+  every public route was moved into page docs and wrapped in Editable primitives:
+  - `home` doc grew: `notification`, `workAside`, `heroFolder`, `workFolder`,
+    `skimPrompt`, `aboutScene`, `about.kicker*`, and many `site.*` fields (hero
+    CTAs/roles/ticker/logo, 8 numbered section headers, services CTA, contact
+    labels, footer explore/connect, etc.).
+  - `about` doc grew a `page` object (hero identity card, clock/availability/
+    platforms/currently cards, kickers, terminal chrome, CTA); journey years,
+    credentials type, tools chips, devices are wrapped too.
+  - `skim` doc grew `chrome`, `overview`, `headers`, `clientModal` + link/labels;
+    /skim and /gallery were added to `INLINE_EDIT_ROUTES`, and `skim`,
+    `clientsMeta`, `chrome` were added to edit-mode `bases` (they were missing —
+    skim/clientsMeta saves would previously no-op).
+  - NEW page doc **`pages/chrome`** (`src/lib/chrome-data.ts`, admin tab "Page
+    headers & labels") holds route-level chrome for ads/graphics/calendars/videos,
+    services, socials, gallery, clients, and the shared work case-study labels
+    (kickers, window titles, coming-soon modals, buttons).
+  - Gallery folder labels/descriptions and item titles/images, client modal
+    screenshots/captions, work-detail graphics modal (title/description/process/
+    tools), analytics metrics, before/after points (when item data exists) are all
+    editable in place.
+  - Deliberately NOT editable: NavBar/dock labels and menu-bar chrome (structural
+    navigation), traffic lights, decorative glyphs, and per-tool SVG icon artwork
+    (icons stay in code, merged by name/position).
 
 ### Routes consuming CMS data (all done)
 Every public route reads from the content hooks: `index` (home doc), `about`
@@ -73,14 +101,11 @@ owner's; do NOT enable open sign-up methods without tightening rules
 
 ## 2. What is NOT finished — do these to "finish the CMS"
 
-### A. Cloudinary upload preset (blocker for image uploads)
-`src/lib/cloudinary.ts` has `cloudName: "e7fw2vvs"` but
-`uploadPreset: "REPLACE_WITH_UNSIGNED_PRESET"` — a placeholder. Until fixed, every
-`EditableImage` upload throws ("Cloudinary is not configured").
-**Fix:** user must create an unsigned upload preset in the Cloudinary dashboard
-(Settings → Upload → Upload presets → Add → Signing Mode = Unsigned), then paste the
-preset name into `cloudinary.ts`. Claude can't do the dashboard part — ask the user.
-The file header documents the exact steps.
+### A. ~~Cloudinary upload preset~~ — DONE 2026-08-21
+Unsigned preset `shanzster_unsigned` created via the Admin API (uploads go to the
+`portfolio/` folder), set in `cloudinary.ts`, and verified with a live test upload.
+NOTE: the user pasted their API secret in chat — they were told to regenerate it
+(Settings → Access Keys). The secret is not used anywhere in the code.
 
 ### B. Firebase project setup (user actions — verify, then guide)
 1. **Auth:** Email/Password provider enabled in Firebase console + the admin user
@@ -98,11 +123,9 @@ builds to `dist` (and `vercel.json` exists too — deploy target is ambiguous).
 If deploying to Firebase Hosting, change hosting `public` to `"dist"`; if Vercel,
 ignore Firebase hosting. **Ask the user which host they use** before changing.
 
-### D. Pre-existing TypeScript error (unrelated to CMS but fails `tsc --noEmit`)
-`src/components/NavBar.tsx:250` — TS2339: `icon` doesn't exist on the nav-item union
-(divider entries `{divider: true}` lack `icon`/`label` narrowing). Fix with a type
-guard or discriminated union. Note: `npm run build` may still pass (vite doesn't
-type-check), but fix it anyway.
+### D. ~~Pre-existing TypeScript error~~ — FIXED 2026-08-21
+`src/components/NavBar.tsx:250` TS2339 fixed (cast narrowed to
+`{href; label; icon}`); `npx tsc --noEmit` is clean.
 
 ### E. Nice-to-haves (only if the user asks)
 - Drag-to-reorder in the admin lists (currently `_order` is only settable implicitly;

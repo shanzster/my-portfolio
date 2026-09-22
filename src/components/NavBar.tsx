@@ -35,39 +35,12 @@ const DOCK_ITEMS = [
     ),
   },
   {
-    label: "Gallery",
-    href: "/gallery",
-    icon: (
-      <svg viewBox="0 0 28 28" fill="none" className="w-full h-full">
-        <rect width="28" height="28" rx="7" fill="oklch(0.62 0.20 255)" />
-        <rect x="6" y="6" width="7" height="7" rx="1.5" fill="white" fillOpacity="0.9" />
-        <rect x="15" y="6" width="7" height="7" rx="1.5" fill="white" fillOpacity="0.9" />
-        <rect x="6" y="15" width="7" height="7" rx="1.5" fill="white" fillOpacity="0.9" />
-        <rect x="15" y="15" width="7" height="7" rx="1.5" fill="white" fillOpacity="0.9" />
-      </svg>
-    ),
-  },
-  {
     label: "Work",
     href: "/#work",
     icon: (
       <svg viewBox="0 0 28 28" fill="none" className="w-full h-full">
         <rect width="28" height="28" rx="7" fill="oklch(0.68 0.14 238)" />
         <path d="M5 10.5C5 9.67 5.67 9 6.5 9H12l2 2.5H21.5c.83 0 1.5.67 1.5 1.5V20c0 .83-.67 1.5-1.5 1.5h-15C5.67 21.5 5 20.83 5 20V10.5Z" fill="white" fillOpacity="0.9" />
-      </svg>
-    ),
-  },
-  {
-    label: "Clients",
-    href: "/clients",
-    icon: (
-      <svg viewBox="0 0 28 28" fill="none" className="w-full h-full">
-        <rect width="28" height="28" rx="7" fill="oklch(0.68 0.14 55)" />
-        <circle cx="10" cy="11" r="3" fill="white" fillOpacity="0.9" />
-        <circle cx="18" cy="11" r="3" fill="white" fillOpacity="0.9" />
-        <path d="M4 22c0-3 2.686-5 6-5" stroke="white" strokeOpacity="0.9" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M24 22c0-3-2.686-5-6-5" stroke="white" strokeOpacity="0.9" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M10 17c0-2.21 1.79-4 4-4s4 1.79 4 4" stroke="white" strokeOpacity="0.9" strokeWidth="1.8" strokeLinecap="round" />
       </svg>
     ),
   },
@@ -218,7 +191,7 @@ export function NavBar() {
               );
             }
 
-            const navItem = item as (typeof DOCK_ITEMS)[number] & { href: string; label: string };
+            const navItem = item as { href: string; label: string; icon: React.ReactNode };
             const realIndex = allItems.slice(0, i).filter((x) => !("divider" in x && x.divider)).length;
             const scale = getScale(realIndex);
 

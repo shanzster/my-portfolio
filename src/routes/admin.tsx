@@ -29,6 +29,7 @@ import {
   HOME_FIELDS,
   SKIM_FIELDS,
   CLIENTS_META_FIELDS,
+  CHROME_FIELDS,
   type Field,
 } from "@/lib/admin-schema";
 import { AdminForm } from "@/components/AdminForm";
@@ -55,6 +56,7 @@ const PAGE_SCHEMAS: Record<PageId, Field[]> = {
   home: HOME_FIELDS,
   skim: SKIM_FIELDS,
   clientsMeta: CLIENTS_META_FIELDS,
+  chrome: CHROME_FIELDS,
 };
 
 function slugify(s: string): string {

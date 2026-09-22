@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import logoImage from "@/image_reference/logos/Shanzster_Logo.png";
 
 export function BootScreen({ onDone }: { onDone: () => void }) {
   const [stage, setStage] = useState<"icon" | "name" | "tagline" | "out">("icon");
@@ -33,20 +34,19 @@ export function BootScreen({ onDone }: { onDone: () => void }) {
         pointerEvents: visible ? "all" : "none",
       }}
     >
-      {/* Folder icon */}
+      {/* Logo — spins in on first entry */}
       <div
         style={{
           opacity: stage === "icon" || stage === "name" || stage === "tagline" ? 1 : 0,
-          transform: stage === "icon" ? "scale(0.85)" : "scale(1)",
-          transition: "opacity 0.5s ease, transform 0.5s cubic-bezier(.2,.8,.2,1)",
+          transition: "opacity 0.5s ease",
         }}
       >
-        <div
-          className="flex h-20 w-20 items-center justify-center rounded-[22px] text-[32px] font-bold text-white shadow-[0_12px_40px_-8px_oklch(0.55_0.12_240/0.35)]"
-          style={{ background: "linear-gradient(160deg, oklch(0.78 0.12 232), oklch(0.68 0.15 242))" }}
-        >
-          S
-        </div>
+        <img
+          src={logoImage}
+          alt="Shanzster"
+          className="h-20 w-auto object-contain"
+          style={{ animation: "logo-spin-in 1.3s cubic-bezier(.2,.8,.2,1) both" }}
+        />
       </div>
 
       {/* Name */}

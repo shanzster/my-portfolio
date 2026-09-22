@@ -1,6 +1,6 @@
 import profileImage from "@/image_reference/profile.png";
 import { useHome } from "@/lib/content";
-import { EditableImage } from "@/lib/edit-mode";
+import { EditableImage, EditableText } from "@/lib/edit-mode";
 
 export function AboutScene() {
   const { data: home } = useHome();
@@ -36,26 +36,20 @@ export function AboutScene() {
         className="absolute bottom-0 inset-x-0 px-7 pb-7"
         style={{ zIndex: 3 }}
       >
-        <p className="text-[10px] uppercase tracking-[0.28em] text-foreground/40 mb-1">
-          about me
-        </p>
-        <p className="text-[28px] font-bold tracking-tightest text-foreground leading-tight">
-          Shanzster
-        </p>
-        <p className="mt-0.5 text-[13px] tracking-tight text-foreground/55">
-          Creative Developer · Social Media Manager
-        </p>
+        <EditableText page="home" path={["aboutScene", "kicker"]} value={home.aboutScene.kicker} as="p" className="text-[10px] uppercase tracking-[0.28em] text-foreground/40 mb-1" />
+        <EditableText page="home" path={["aboutScene", "name"]} value={home.aboutScene.name} as="p" className="text-[28px] font-bold tracking-tightest text-foreground leading-tight" />
+        <EditableText page="home" path={["aboutScene", "role"]} value={home.aboutScene.role} as="p" className="mt-0.5 text-[13px] tracking-tight text-foreground/55" />
 
         {/* Quick stat pills */}
         <div className="mt-4 flex flex-wrap gap-2">
-          {home.site.aboutPills.map(({ value, label }) => (
+          {home.site.aboutPills.map(({ value, label }, i) => (
             <div
-              key={label}
+              key={i}
               className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background/80 px-3 py-1"
               style={{ backdropFilter: "blur(8px)" }}
             >
-              <span className="text-[13px] font-bold tracking-tightest text-foreground">{value}</span>
-              <span className="text-[10px] tracking-tight text-foreground/45">{label}</span>
+              <EditableText page="home" path={["site", "aboutPills", i, "value"]} value={value} as="span" className="text-[13px] font-bold tracking-tightest text-foreground" />
+              <EditableText page="home" path={["site", "aboutPills", i, "label"]} value={label} as="span" className="text-[10px] tracking-tight text-foreground/45" />
             </div>
           ))}
         </div>

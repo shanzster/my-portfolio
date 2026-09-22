@@ -13,7 +13,7 @@ function useClock() {
 const MENU_LINKS = [
   { label: "Work",     href: "/#work"     },
   { label: "Services", href: "/#services" },
-  { label: "Clients",  href: "/clients"   },
+  // { label: "Clients",  href: "/clients"   },
   { label: "About",    href: "/about"     },
   { label: "Contact",  href: "/#contact"  },
 ];

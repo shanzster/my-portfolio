@@ -21,6 +21,8 @@ export type SkimService = { t: string; d: string };
 export type SkimSocial = { h: string; link: string; color: string };
 export type SkimAction = { label: string; sub: string; href: string };
 
+export type SkimHeader = { title: string; sub: string };
+
 export type SkimContent = {
   stats: SkimStat[];
   clients: SkimClient[];
@@ -30,6 +32,40 @@ export type SkimContent = {
   services: SkimService[];
   socials: SkimSocial[];
   contactActions: SkimAction[];
+  chrome: {
+    menuName: string;
+    menuSub: string;
+    fullSiteLink: string;
+    sectionLabels: string[];
+  };
+  overview: {
+    name: string;
+    subtitle: string;
+    paragraph: string;
+    toolkitLabel: string;
+    /* Per-slot icon overrides for the toolkit row; "" falls back to the
+       built-in logo (TOOL_LOGOS in skim.tsx, matched by position). */
+    toolIcons: string[];
+    toolkitExtra: string;
+    availability: string;
+  };
+  headers: {
+    work: SkimHeader;
+    results: SkimHeader;
+    services: SkimHeader;
+    socials: SkimHeader;
+    contact: SkimHeader;
+  };
+  recentVisualsLabel: string;
+  seeServicesLink: string;
+  openSocialsLink: string;
+  hireButton: string;
+  clientModal: {
+    sampleGraphics: string;
+    moreVisuals: string;
+    close: string;
+    fullCaseStudy: string;
+  };
 };
 
 export const SKIM: SkimContent = {
@@ -143,4 +179,37 @@ export const SKIM: SkimContent = {
     { label: "Download CV", sub: "PDF", href: "/ALARCON_SA_CV_MVA.pdf" },
     { label: "Instagram", sub: "@shanzster.zip", href: "https://instagram.com/shanzster.zip" },
   ],
+  chrome: {
+    menuName: "Shanzster",
+    menuSub: "— skim view",
+    fullSiteLink: "Full site ↗",
+    sectionLabels: ["Overview", "Work", "Results", "Services", "Socials", "Contact"],
+  },
+  overview: {
+    name: "Shanzster",
+    subtitle: "Social Media Manager · Creative Developer · Subic Bay, PH",
+    paragraph:
+      "I run the full marketing stack for business owners who don't want to deal with marketing — or don't have time for it. Google Ads, Meta Ads, content, branding, Shopify, and email. I understand the whole store funnel, start to end.",
+    toolkitLabel: "Toolkit",
+    toolIcons: ["", "", "", "", ""],
+    toolkitExtra: "+ Klaviyo · Shopify · Notion · AI",
+    availability: "Available for new clients — 2026",
+  },
+  headers: {
+    work: { title: "Selected work", sub: "9 brands — tap for overview & graphics" },
+    results: { title: "Results & analytics", sub: "Real screenshots — tap to enlarge" },
+    services: { title: "Services", sub: "Pick a service, or mix and match" },
+    socials: { title: "Socials", sub: "The accounts I run" },
+    contact: { title: "Let's work together", sub: "Taking on new clients for 2026" },
+  },
+  recentVisualsLabel: "Recent visuals",
+  seeServicesLink: "See full services →",
+  openSocialsLink: "Open socials wall →",
+  hireButton: "Hire me →",
+  clientModal: {
+    sampleGraphics: "Sample graphics",
+    moreVisuals: "More visuals in the full case study.",
+    close: "Close",
+    fullCaseStudy: "Full case study →",
+  },
 };

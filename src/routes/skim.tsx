@@ -9,6 +9,7 @@ import capcutLogo from "@/image_reference/logos/capcut.png";
 import metaLogo from "@/image_reference/logos/meta.png";
 import { type SkimClient as Client } from "@/lib/skim-data";
 import { useSkim } from "@/lib/content";
+import { EditableText, EditableImage, useEdit } from "@/lib/edit-mode";
 
 export const Route = createFileRoute("/skim")({
   component: SkimPage,
@@ -55,25 +56,46 @@ type OpenImg = (img: { src: string; label: string }) => void;
 
 /* ─── Shared bits ─── */
 
-function ScreenHeader({ title, sub }: { title: string; sub?: string }) {
+type HeaderKey = "work" | "results" | "services" | "socials" | "contact";
+
+function ScreenHeader({ hk }: { hk: HeaderKey }) {
+  const { data: skim } = useSkim();
+  const h = skim.headers[hk];
   return (
     <div className="mb-5">
-      <h2 className="text-[22px] font-bold tracking-tightest text-foreground leading-none">{title}</h2>
-      {sub && <p className="mt-1.5 text-[12px] tracking-tight text-foreground/45">{sub}</p>}
+      <EditableText page="skim" path={["headers", hk, "title"]} value={h.title} as="h2" className="text-[22px] font-bold tracking-tightest text-foreground leading-none block" />
+      {h.sub && <EditableText page="skim" path={["headers", hk, "sub"]} value={h.sub} as="p" className="mt-1.5 text-[12px] tracking-tight text-foreground/45" />}
     </div>
   );
 }
 
-function Thumb({ img, onOpen, ratio = "aspect-[4/3]" }: { img: { src: string; label: string }; onOpen: OpenImg; ratio?: string }) {
+/* `path` points at the {src,label} object inside the skim doc so both the
+   image and its caption are editable in place. */
+function Thumb({ img, onOpen, ratio = "aspect-[4/3]", path }: { img: { src: string; label: string }; onOpen: OpenImg; ratio?: string; path?: (string | number)[] }) {
   return (
     <button onClick={() => onOpen(img)} className="group text-left focus:outline-none">
       <div className={`relative w-full overflow-hidden rounded-[10px] border border-border bg-secondary ${ratio}`}>
-        <img src={img.src} alt={img.label} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-end p-2">
+        {path ? (
+          <EditableImage
+            page="skim"
+            path={[...path, "src"]}
+            src={img.src}
+            alt={img.label}
+            wrapperClassName="absolute inset-0"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+          />
+        ) : (
+          <img src={img.src} alt={img.label} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
+        )}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-end p-2 pointer-events-none">
           <span className="opacity-0 group-hover:opacity-100 transition text-white text-[9px] tracking-[0.14em] uppercase">Open →</span>
         </div>
       </div>
-      <p className="mt-1.5 text-[10px] tracking-tight text-foreground/45 leading-snug">{img.label}</p>
+      {path ? (
+        <EditableText page="skim" path={[...path, "label"]} value={img.label} as="p" className="mt-1.5 text-[10px] tracking-tight text-foreground/45 leading-snug" />
+      ) : (
+        <p className="mt-1.5 text-[10px] tracking-tight text-foreground/45 leading-snug">{img.label}</p>
+      )}
     </button>
   );
 }
@@ -82,7 +104,9 @@ function Thumb({ img, onOpen, ratio = "aspect-[4/3]" }: { img: { src: string; la
 
 function Overview() {
   const { data: skim } = useSkim();
+  const { editing } = useEdit();
   const STATS = skim.stats;
+  const ov = skim.overview;
   return (
     <div>
       <div className="flex items-center gap-3 mb-5">
@@ -90,59 +114,65 @@ function Overview() {
           <img src={logoImage} alt="Shanzster" className="h-8 w-auto object-contain" />
         </div>
         <div>
-          <h2 className="text-[22px] font-bold tracking-tightest text-foreground leading-none">Shanzster</h2>
-          <p className="mt-1 text-[12px] tracking-tight text-foreground/45">Social Media Manager · Creative Developer · Subic Bay, PH</p>
+          <EditableText page="skim" path={["overview", "name"]} value={ov.name} as="h2" className="text-[22px] font-bold tracking-tightest text-foreground leading-none block" />
+          <EditableText page="skim" path={["overview", "subtitle"]} value={ov.subtitle} as="p" className="mt-1 text-[12px] tracking-tight text-foreground/45" />
         </div>
       </div>
 
-      <p className="text-[13px] leading-relaxed tracking-tight text-foreground/70 max-w-md">
-        I run the full marketing stack for business owners who don&apos;t want to deal with marketing — or don&apos;t
-        have time for it. Google Ads, Meta Ads, content, branding, Shopify, and email. I understand the whole store
-        funnel, start to end.
-      </p>
+      <EditableText page="skim" path={["overview", "paragraph"]} value={ov.paragraph} as="p" className="text-[13px] leading-relaxed tracking-tight text-foreground/70 max-w-md" />
 
       <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        {STATS.map((s) => (
-          <div key={s.l} className="rounded-[10px] border border-border bg-secondary/40 px-3 py-3">
-            <p className="text-[22px] font-bold tracking-tightest leading-none text-foreground">{s.v}</p>
-            <p className="mt-1 text-[9px] uppercase tracking-[0.1em] text-foreground/45 leading-tight">{s.l}</p>
+        {STATS.map((s, i) => (
+          <div key={i} className="rounded-[10px] border border-border bg-secondary/40 px-3 py-3">
+            <EditableText page="skim" path={["stats", i, "v"]} value={s.v} as="p" className="text-[22px] font-bold tracking-tightest leading-none text-foreground" />
+            <EditableText page="skim" path={["stats", i, "l"]} value={s.l} as="p" className="mt-1 text-[9px] uppercase tracking-[0.1em] text-foreground/45 leading-tight" />
           </div>
         ))}
       </div>
 
       <div className="mt-5">
-        <p className="text-[9px] uppercase tracking-[0.2em] text-foreground/30 mb-2">Toolkit</p>
+        <EditableText page="skim" path={["overview", "toolkitLabel"]} value={ov.toolkitLabel} as="p" className="text-[9px] uppercase tracking-[0.2em] text-foreground/30 mb-2" />
         <div className="flex items-center gap-2 flex-wrap">
-          {TOOL_LOGOS.map((t) => (
-            <div key={t.name} className="h-9 w-9 rounded-[9px] overflow-hidden border border-border shadow-[0_2px_8px_-3px_oklch(0.2_0.02_240/0.25)]">
-              <img src={t.src} alt={t.name} className="h-full w-full object-cover" />
+          {TOOL_LOGOS.map((t, i) => (
+            <div key={i} className="relative h-9 w-9 rounded-[9px] overflow-hidden border border-border shadow-[0_2px_8px_-3px_oklch(0.2_0.02_240/0.25)]">
+              <img src={ov.toolIcons?.[i] || t.src} alt={t.name} className="h-full w-full object-cover" />
+              {editing && (
+                <EditableImage
+                  page="skim"
+                  path={["overview", "toolIcons", i]}
+                  src={ov.toolIcons?.[i] ?? ""}
+                  alt={t.name}
+                  wrapperClassName="absolute inset-0 block"
+                  className="h-full w-full object-cover"
+                />
+              )}
             </div>
           ))}
-          <span className="text-[10px] tracking-tight text-foreground/40">+ Klaviyo · Shopify · Notion · AI</span>
+          <EditableText page="skim" path={["overview", "toolkitExtra"]} value={ov.toolkitExtra} as="span" className="text-[10px] tracking-tight text-foreground/40" />
         </div>
       </div>
 
       <div className="mt-5 flex items-center gap-2">
         <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--traffic-green)" }} />
-        <span className="text-[11px] tracking-tight text-foreground/55">Available for new clients — 2026</span>
+        <EditableText page="skim" path={["overview", "availability"]} value={ov.availability} as="span" className="text-[11px] tracking-tight text-foreground/55" />
       </div>
     </div>
   );
 }
 
-function Work({ onImage, onClient }: { onImage: OpenImg; onClient: (c: Client) => void }) {
+function Work({ onImage, onClient }: { onImage: OpenImg; onClient: (c: Client, i: number) => void }) {
   const { data: skim } = useSkim();
   const CLIENTS = skim.clients;
   const VISUALS = skim.visuals;
   return (
     <div>
-      <ScreenHeader title="Selected work" sub="9 brands — tap for overview & graphics" />
+      <ScreenHeader hk="work" />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {CLIENTS.map((c) => (
+        {CLIENTS.map((c, i) => (
           <button
-            key={c.name}
-            onClick={() => onClient(c)}
+            key={i}
+            onClick={() => onClient(c, i)}
             className="flex items-center gap-3 rounded-[10px] border border-border bg-secondary/40 px-3 py-2.5 text-left hover:bg-secondary transition"
           >
             <div className="h-9 w-9 shrink-0 rounded-[8px] overflow-hidden flex items-center justify-center" style={{ background: c.color }}>
@@ -153,18 +183,18 @@ function Work({ onImage, onClient }: { onImage: OpenImg; onClient: (c: Client) =
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-medium tracking-tight text-foreground/85 leading-tight truncate">{c.name}</p>
-              <p className="text-[10px] tracking-tight text-foreground/45 truncate">{c.result}</p>
+              <EditableText page="skim" path={["clients", i, "name"]} value={c.name} as="p" className="text-[12px] font-medium tracking-tight text-foreground/85 leading-tight truncate" />
+              <EditableText page="skim" path={["clients", i, "result"]} value={c.result} as="p" className="text-[10px] tracking-tight text-foreground/45 truncate" />
             </div>
             <span className="text-[11px] text-foreground/25">→</span>
           </button>
         ))}
       </div>
 
-      <p className="mt-5 text-[9px] uppercase tracking-[0.2em] text-foreground/30 mb-2">Recent visuals</p>
+      <EditableText page="skim" path={["recentVisualsLabel"]} value={skim.recentVisualsLabel} as="p" className="mt-5 text-[9px] uppercase tracking-[0.2em] text-foreground/30 mb-2" />
       <div className="grid grid-cols-3 gap-2">
-        {VISUALS.map((v) => (
-          <Thumb key={v.src} img={v} onOpen={onImage} ratio="aspect-square" />
+        {VISUALS.map((v, i) => (
+          <Thumb key={i} img={v} onOpen={onImage} ratio="aspect-square" path={["visuals", i]} />
         ))}
       </div>
     </div>
@@ -177,20 +207,20 @@ function Results({ onImage }: { onImage: OpenImg }) {
   const ANALYTICS = skim.analytics;
   return (
     <div>
-      <ScreenHeader title="Results & analytics" sub="Real screenshots — tap to enlarge" />
+      <ScreenHeader hk="results" />
 
       <div className="grid grid-cols-3 gap-2.5 mb-5">
-        {RESULT_TILES.map((r) => (
-          <div key={r.l} className="rounded-[10px] border border-border bg-secondary/40 px-3 py-3">
-            <p className="text-[20px] font-bold tracking-tightest leading-none text-foreground">{r.v}</p>
-            <p className="mt-1 text-[9px] uppercase tracking-[0.08em] text-foreground/45 leading-tight">{r.l}</p>
+        {RESULT_TILES.map((r, i) => (
+          <div key={i} className="rounded-[10px] border border-border bg-secondary/40 px-3 py-3">
+            <EditableText page="skim" path={["resultTiles", i, "v"]} value={r.v} as="p" className="text-[20px] font-bold tracking-tightest leading-none text-foreground" />
+            <EditableText page="skim" path={["resultTiles", i, "l"]} value={r.l} as="p" className="mt-1 text-[9px] uppercase tracking-[0.08em] text-foreground/45 leading-tight" />
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-        {ANALYTICS.map((a) => (
-          <Thumb key={a.src} img={a} onOpen={onImage} ratio="aspect-[4/3]" />
+        {ANALYTICS.map((a, i) => (
+          <Thumb key={i} img={a} onOpen={onImage} ratio="aspect-[4/3]" path={["analytics", i]} />
         ))}
       </div>
     </div>
@@ -202,17 +232,17 @@ function Services() {
   const SERVICES = skim.services;
   return (
     <div>
-      <ScreenHeader title="Services" sub="Pick a service, or mix and match" />
+      <ScreenHeader hk="services" />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {SERVICES.map((s) => (
-          <div key={s.t} className="rounded-[10px] border border-border bg-secondary/40 px-3 py-2.5">
-            <p className="text-[12px] font-medium tracking-tight text-foreground/85">{s.t}</p>
-            <p className="text-[10.5px] tracking-tight text-foreground/45 leading-snug mt-0.5">{s.d}</p>
+        {SERVICES.map((s, i) => (
+          <div key={i} className="rounded-[10px] border border-border bg-secondary/40 px-3 py-2.5">
+            <EditableText page="skim" path={["services", i, "t"]} value={s.t} as="p" className="text-[12px] font-medium tracking-tight text-foreground/85" />
+            <EditableText page="skim" path={["services", i, "d"]} value={s.d} as="p" className="text-[10.5px] tracking-tight text-foreground/45 leading-snug mt-0.5" />
           </div>
         ))}
       </div>
       <Link to="/services" className="mt-4 inline-block text-[11px] tracking-tight text-foreground/50 hover:text-foreground transition">
-        See full services →
+        <EditableText page="skim" path={["seeServicesLink"]} value={skim.seeServicesLink} />
       </Link>
     </div>
   );
@@ -223,24 +253,24 @@ function Socials() {
   const SOCIALS = skim.socials;
   return (
     <div>
-      <ScreenHeader title="Socials" sub="The accounts I run" />
+      <ScreenHeader hk="socials" />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {SOCIALS.map((s) => (
+        {SOCIALS.map((s, i) => (
           <a
-            key={s.h}
+            key={i}
             href={s.link}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 rounded-[10px] border border-border bg-secondary/40 px-3 py-2.5 hover:bg-secondary transition"
           >
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white text-[12px]" style={{ background: s.color }}>◎</span>
-            <span className="text-[12px] font-medium tracking-tight text-foreground/85 flex-1 truncate">{s.h}</span>
+            <EditableText page="skim" path={["socials", i, "h"]} value={s.h} as="span" className="text-[12px] font-medium tracking-tight text-foreground/85 flex-1 truncate" />
             <span className="text-[10px] tracking-tight text-foreground/40">↗</span>
           </a>
         ))}
       </div>
       <Link to="/socials" className="mt-4 inline-block text-[11px] tracking-tight text-foreground/50 hover:text-foreground transition">
-        Open socials wall →
+        <EditableText page="skim" path={["openSocialsLink"]} value={skim.openSocialsLink} />
       </Link>
     </div>
   );
@@ -251,32 +281,32 @@ function Contact() {
   const actions = skim.contactActions;
   return (
     <div>
-      <ScreenHeader title="Let's work together" sub="Taking on new clients for 2026" />
+      <ScreenHeader hk="contact" />
       <div className="flex flex-col gap-2 max-w-sm">
-        {actions.map((a) => (
+        {actions.map((a, i) => (
           <a
-            key={a.label}
+            key={i}
             href={a.href}
             target={a.href.startsWith("http") || a.href.endsWith(".pdf") ? "_blank" : undefined}
             rel="noopener noreferrer"
             className="flex items-center justify-between rounded-[10px] border border-border bg-secondary/40 px-4 py-3 hover:bg-secondary transition"
           >
-            <span className="text-[12px] font-medium tracking-tight text-foreground/85">{a.label}</span>
-            <span className="text-[10px] tracking-tight text-foreground/40">{a.sub}</span>
+            <EditableText page="skim" path={["contactActions", i, "label"]} value={a.label} as="span" className="text-[12px] font-medium tracking-tight text-foreground/85" />
+            <EditableText page="skim" path={["contactActions", i, "sub"]} value={a.sub} as="span" className="text-[10px] tracking-tight text-foreground/40" />
           </a>
         ))}
         <a
           href="mailto:seanthetechyyy@gmail.com"
           className="mt-1 rounded-full bg-foreground px-5 py-2.5 text-center text-[12px] tracking-tight text-background transition hover:opacity-85"
         >
-          Hire me →
+          <EditableText page="skim" path={["hireButton"]} value={skim.hireButton} />
         </a>
       </div>
     </div>
   );
 }
 
-function SectionContent({ id, onImage, onClient }: { id: SectionId; onImage: OpenImg; onClient: (c: Client) => void }) {
+function SectionContent({ id, onImage, onClient }: { id: SectionId; onImage: OpenImg; onClient: (c: Client, i: number) => void }) {
   switch (id) {
     case "overview": return <Overview />;
     case "work": return <Work onImage={onImage} onClient={onClient} />;
@@ -289,7 +319,10 @@ function SectionContent({ id, onImage, onClient }: { id: SectionId; onImage: Ope
 
 /* ─── Client overview modal ─── */
 
-function ClientModal({ client, onClose, onImage }: { client: Client; onClose: () => void; onImage: OpenImg }) {
+function ClientModal({ client, index, onClose, onImage }: { client: Client; index: number; onClose: () => void; onImage: OpenImg }) {
+  const { data: skim } = useSkim();
+  const { editing } = useEdit();
+  const cm = skim.clientModal;
   const graphics = client.graphics ?? [];
   return (
     <div
@@ -313,46 +346,54 @@ function ClientModal({ client, onClose, onImage }: { client: Client; onClose: ()
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 shrink-0 overflow-hidden rounded-[10px] flex items-center justify-center" style={{ background: client.color }}>
-              {client.logo ? (
-                <img src={client.logo} alt={client.name} className="h-full w-full object-cover" />
+              {client.logo || editing ? (
+                <EditableImage
+                  page="skim"
+                  path={["clients", index, "logo"]}
+                  src={client.logo ?? ""}
+                  alt={client.name}
+                  wrapperClassName="relative block h-full w-full"
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <span className="text-white text-[18px] font-bold">{client.name[0]}</span>
               )}
             </div>
             <div>
-              <h3 className="text-[18px] font-bold tracking-tightest text-foreground leading-tight">{client.name}</h3>
-              <p className="text-[11px] tracking-tight text-foreground/45">{client.tag} · {client.result}</p>
+              <EditableText page="skim" path={["clients", index, "name"]} value={client.name} as="h3" className="text-[18px] font-bold tracking-tightest text-foreground leading-tight block" />
+              <p className="text-[11px] tracking-tight text-foreground/45">
+                <EditableText page="skim" path={["clients", index, "tag"]} value={client.tag} /> ·{" "}
+                <EditableText page="skim" path={["clients", index, "result"]} value={client.result} />
+              </p>
             </div>
           </div>
 
-          <p className="mt-4 text-[13px] leading-relaxed tracking-tight text-foreground/70">{client.overview}</p>
+          <EditableText page="skim" path={["clients", index, "overview"]} value={client.overview} as="p" className="mt-4 text-[13px] leading-relaxed tracking-tight text-foreground/70" />
 
           {graphics.length > 0 ? (
             <>
-              <p className="mt-5 text-[9px] uppercase tracking-[0.2em] text-foreground/30 mb-2">Sample graphics</p>
+              <EditableText page="skim" path={["clientModal", "sampleGraphics"]} value={cm.sampleGraphics} as="p" className="mt-5 text-[9px] uppercase tracking-[0.2em] text-foreground/30 mb-2" />
               <div className="grid grid-cols-3 gap-2">
-                {graphics.map((g) => (
-                  <Thumb key={g.src} img={g} onOpen={onImage} ratio="aspect-square" />
+                {graphics.map((g, gi) => (
+                  <Thumb key={gi} img={g} onOpen={onImage} ratio="aspect-square" path={["clients", index, "graphics", gi]} />
                 ))}
               </div>
             </>
           ) : (
-            <p className="mt-5 rounded-[10px] border border-border bg-secondary/40 px-3 py-2.5 text-[11px] tracking-tight text-foreground/45">
-              More visuals in the full case study.
-            </p>
+            <EditableText page="skim" path={["clientModal", "moreVisuals"]} value={cm.moreVisuals} as="p" className="mt-5 rounded-[10px] border border-border bg-secondary/40 px-3 py-2.5 text-[11px] tracking-tight text-foreground/45" />
           )}
         </div>
 
         {/* Footer */}
         <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border p-3">
           <button onClick={onClose} className="px-2 text-[11px] tracking-tight text-foreground/50 transition hover:text-foreground">
-            Close
+            <EditableText page="skim" path={["clientModal", "close"]} value={cm.close} />
           </button>
           <Link
             to={client.to}
             className="rounded-full bg-foreground px-4 py-2 text-[11px] tracking-tight text-background transition hover:opacity-85"
           >
-            Full case study →
+            <EditableText page="skim" path={["clientModal", "fullCaseStudy"]} value={cm.fullCaseStudy} />
           </Link>
         </div>
       </div>
@@ -384,10 +425,14 @@ function ImageLightbox({ img, onClose }: { img: { src: string; label: string }; 
 
 function NavButton({
   section,
+  index,
+  label,
   active,
   onClick,
 }: {
   section: (typeof SECTIONS)[number];
+  index: number;
+  label: string;
   active: boolean;
   onClick: () => void;
 }) {
@@ -397,7 +442,7 @@ function NavButton({
       className={`flex flex-1 md:flex-none md:w-full flex-col md:flex-row items-center md:gap-3 gap-1 rounded-[10px] px-2 py-2 md:px-3 md:py-2.5 transition-colors ${
         active ? "bg-secondary" : "hover:bg-secondary/50"
       }`}
-      aria-label={section.label}
+      aria-label={label}
     >
       <span
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] text-[15px] text-white"
@@ -410,7 +455,7 @@ function NavButton({
           active ? "text-foreground font-medium" : "text-foreground/50"
         }`}
       >
-        {section.label}
+        <EditableText page="skim" path={["chrome", "sectionLabels", index]} value={label} />
       </span>
     </button>
   );
@@ -419,11 +464,13 @@ function NavButton({
 /* ─── Page ─── */
 
 function SkimPage() {
+  const { data: skim } = useSkim();
+  const chrome = skim.chrome;
   const [active, setActive] = useState<SectionId>("overview"); // selected button (updates instantly)
   const [display, setDisplay] = useState<SectionId>("overview"); // content on screen
   const [anim, setAnim] = useState<"" | "genie-down" | "genie-up">("");
   const [lightbox, setLightbox] = useState<{ src: string; label: string } | null>(null);
-  const [client, setClient] = useState<Client | null>(null);
+  const [client, setClient] = useState<{ c: Client; i: number } | null>(null);
   const timers = useRef<number[]>([]);
 
   useEffect(() => () => timers.current.forEach((t) => clearTimeout(t)), []);
@@ -440,22 +487,24 @@ function SkimPage() {
     timers.current.push(t1, t2);
   }
 
-  const shown = SECTIONS.find((s) => s.id === display)!;
+  const shownIdx = SECTIONS.findIndex((s) => s.id === display);
+  const shown = SECTIONS[shownIdx];
+  const shownLabel = chrome.sectionLabels[shownIdx] ?? shown.label;
 
   return (
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-background">
-      {client && <ClientModal client={client} onClose={() => setClient(null)} onImage={setLightbox} />}
+      {client && <ClientModal client={client.c} index={client.i} onClose={() => setClient(null)} onImage={setLightbox} />}
       {lightbox && <ImageLightbox img={lightbox} onClose={() => setLightbox(null)} />}
 
       {/* macOS menu bar / status bar (also reads as the phone status bar on mobile) */}
       <div className="flex h-8 shrink-0 items-center justify-between border-b border-border bg-card/70 px-4 backdrop-blur">
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full" style={{ background: "var(--traffic-green)" }} />
-          <span className="text-[11px] font-medium tracking-tight text-foreground/70">Shanzster</span>
-          <span className="hidden sm:inline text-[11px] tracking-tight text-foreground/35">— skim view</span>
+          <EditableText page="skim" path={["chrome", "menuName"]} value={chrome.menuName} as="span" className="text-[11px] font-medium tracking-tight text-foreground/70" />
+          <EditableText page="skim" path={["chrome", "menuSub"]} value={chrome.menuSub} as="span" className="hidden sm:inline text-[11px] tracking-tight text-foreground/35" />
         </div>
         <Link to="/" className="text-[11px] tracking-tight text-foreground/50 transition hover:text-foreground">
-          Full site ↗
+          <EditableText page="skim" path={["chrome", "fullSiteLink"]} value={chrome.fullSiteLink} />
         </Link>
       </div>
 
@@ -464,8 +513,8 @@ function SkimPage() {
         {/* Buttons — 1/4 */}
         <nav className="flex shrink-0 items-stretch gap-1 border-t border-border bg-card/50 p-2 md:w-1/4 md:max-w-[300px] md:flex-col md:gap-1.5 md:border-r md:border-t-0 md:p-4">
           <p className="hidden md:block px-2 pb-2 text-[9px] uppercase tracking-[0.2em] text-foreground/30">Sections</p>
-          {SECTIONS.map((s) => (
-            <NavButton key={s.id} section={s} active={s.id === active} onClick={() => go(s.id)} />
+          {SECTIONS.map((s, i) => (
+            <NavButton key={s.id} section={s} index={i} label={chrome.sectionLabels[i] ?? s.label} active={s.id === active} onClick={() => go(s.id)} />
           ))}
         </nav>
 
@@ -477,7 +526,7 @@ function SkimPage() {
               <TrafficLights size={11} />
               <span className="flex items-center gap-1.5 text-[11px] tracking-tight text-foreground/55">
                 <span style={{ color: shown.color }}>{shown.glyph}</span>
-                {shown.label}
+                {shownLabel}
               </span>
               <div className="w-[44px]" />
             </div>
@@ -487,7 +536,7 @@ function SkimPage() {
               className={`min-h-0 flex-1 overflow-y-auto p-6 sm:p-8 ${anim}`}
               style={{ transformOrigin: "bottom center" }}
             >
-              <SectionContent id={display} onImage={setLightbox} onClient={setClient} />
+              <SectionContent id={display} onImage={setLightbox} onClient={(c, i) => setClient({ c, i })} />
             </div>
           </div>
         </main>
