@@ -254,6 +254,41 @@ export const WORK_ITEMS: WorkItem[] = [
 
     result:
       "A consistent, recognizable Instagram presence with a feed and posting rhythm built to grow an engaged fashion audience.",
+    analyticsImg: "/Campaigns/stealandstyle_Analytics_Screenshot.png",
+    calendarImg: "/Campaigns/stealandstyle_ContentCalendar.png",
+    graphics: [
+      {
+        src: "/Graphics/OverallBrandBoard.png",
+        title: "Brand Board",
+        description: "The full StealandStyle brand board — colors, typography, and visual language that every post is built on.",
+        tools: ["Illustrator", "Canva"],
+        process: [
+          "Defined the palette, type system, and layout rules for the feed",
+          "Built as the single source of truth for all StealandStyle content",
+        ],
+      },
+      {
+        src: "/Graphics/00_STEAL&STYLE_COLLECTION-1_SK01-05.png",
+        title: "Collection 1 Series",
+        description: "Post series for the first collection drop — designed as a cohesive set so the feed reads as one campaign.",
+        tools: ["Photoshop", "Canva"],
+        process: ["Designed the drop as a series, not one-off posts, so the grid tells a story"],
+      },
+      {
+        src: "/Graphics/01_Collection3_Cover1.png",
+        title: "Collection 3 Cover",
+        description: "Cover graphic for the third collection launch.",
+        tools: ["Photoshop", "Canva"],
+        process: ["Kept the locked brand system while giving the new collection its own moment"],
+      },
+      {
+        src: "/Graphics/COLLECTION2_CH-01.png",
+        title: "Collection 2 Graphic",
+        description: "Campaign graphic from the second collection drop.",
+        tools: ["Photoshop", "Canva"],
+        process: ["Part of the collection series — consistent layout, fresh product focus"],
+      },
+    ],
   },
 
   {

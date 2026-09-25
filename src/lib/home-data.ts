@@ -391,7 +391,7 @@ export const HOME: HomeContent = {
         tagline: "Words that build systems, not just posts.",
         story: [
           "I don't just write — I architect content that compounds. Every piece I create is part of a larger system designed to attract, educate, and convert.",
-          "From editorial calendars to topic clusters, I build content engines that keep working long after I've shipped them. I've managed pages where a single strategy shift tripled organic reach in under 60 days.",
+          "From editorial calendars to topic clusters, I build content engines that keep working long after I've shipped them — systems I've run for fashion e-commerce brands, a government tourism office, and local service businesses.",
           "My approach: understand the audience deeply, map the funnel honestly, then create content that earns attention instead of begging for it.",
         ],
         tags: ["Editorial Systems", "SEO Writing", "Content Calendars", "Storytelling"],
@@ -577,17 +577,17 @@ export const HOME: HomeContent = {
       { value: "↑", label: "paid + organic growth" },
     ],
     aboutPills: [
-      { value: "7", label: "pages managed" },
+      { value: "9", label: "brands managed" },
       { value: "5+", label: "brands built" },
       { value: "2+", label: "yrs freelance" },
     ],
     ticker: [
-      "Northwind +412% organic",
-      "Lumen −47% CAC",
-      "Fieldnotes 18k waitlist",
-      "Hellomint 3.8× demo conv.",
-      "Acorn +210% MRR from email",
-      "Paperline 1.4M monthly readers",
+      "Fast Snaking · 3–5 calls/week, all organic",
+      "Masinloc · Joiners Program → revenue & tourism ↑",
+      "Fast Snaking · brand built from zero in one week",
+      "9 brands managed across 5 platforms",
+      "StealandStyle · IG content system",
+      "Fashion e-com · paid + organic under one roof",
     ],
     weeklyTitle: "this week",
     weeklyItems: [

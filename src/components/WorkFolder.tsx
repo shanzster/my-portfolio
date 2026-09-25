@@ -7,7 +7,9 @@ import { TrafficLights } from "@/components/TrafficLights";
 import { useHome } from "@/lib/content";
 import { EditableText } from "@/lib/edit-mode";
 
-const LOCKED_IDS: string[] = [];
+/* Pre-launch projects: card shows in the folder but opens the Coming Soon
+   modal instead of the empty case study. Remove the id once it has content. */
+const LOCKED_IDS: string[] = ["snappy-nomad"];
 
 /* ─── Coming Soon Modal ─── */
 function ComingSoonModal({ title, onClose }: { title: string; onClose: () => void }) {

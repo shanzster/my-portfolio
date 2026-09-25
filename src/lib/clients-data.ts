@@ -100,7 +100,7 @@ export const CLIENTS: Client[] = [
     description:
       "A fashion store where I own the entire marketing stack — Google Ads, Meta Ads, social media management, branding, and account management. Fast creative cycles held together by a consistent identity.",
     services: ["Google Ads", "Meta Ads", "Social Media Management", "Brand Identity", "Account Management"],
-    link: "https://instagram.com",
+    link: "https://instagram.com/bellamonza",
     color: "oklch(0.45 0.16 350)",
     status: "Active",
   },
@@ -172,7 +172,7 @@ export const CLIENTS: Client[] = [
     description:
       "A personal business built around a travel camera. I run it end-to-end — branding strategy, positioning, identity, launch planning, and ongoing management of the brand and its social presence. Currently in pre-launch.",
     services: ["Branding Strategy", "Brand Identity", "Social Media Management", "Launch Planning"],
-    link: "https://instagram.com",
+    link: "https://instagram.com/shanzster.zip",
     color: "oklch(0.62 0.16 255)",
     status: "Coming Soon",
   },
